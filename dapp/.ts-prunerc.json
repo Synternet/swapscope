@@ -1,0 +1,3 @@
+{
+  "ignore": "src/pages/*.*|cypress.config.ts"
+}
