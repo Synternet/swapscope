@@ -1,0 +1,4 @@
+.env
+*_jwt_file
+/publisher/dist/*
+nats.creds
