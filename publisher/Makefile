@@ -1,5 +1,5 @@
 # Define the paths to the source code and build artifacts
-SRC_PATH=.
+SRC_PATH=./cmd/swapscope
 DIST_PATH=./dist
 BUILD_PATH=./docker
 DOCKERFILE_PROD=$(BUILD_PATH)/Dockerfile
