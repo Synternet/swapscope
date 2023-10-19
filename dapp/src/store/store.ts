@@ -1,12 +1,13 @@
 import { TypedStartListening, configureStore, createListenerMiddleware } from '@reduxjs/toolkit';
 import { liquidityPoolReducer, registerLiquidityPoolListeners } from '@src/features';
+import { getEnv } from '@src/utils';
 
 const listenerMiddleware = createListenerMiddleware();
 
 const createStore = () =>
   configureStore({
     reducer: { liquidityPool: liquidityPoolReducer },
-    devTools: true, // @TODO check env
+    devTools: getEnv() === 'local',
     middleware: (getDefaultMiddleware) => getDefaultMiddleware().prepend(listenerMiddleware.middleware),
   });
 

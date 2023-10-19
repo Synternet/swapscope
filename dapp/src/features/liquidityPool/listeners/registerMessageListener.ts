@@ -1,6 +1,6 @@
 import { Message, NatsWorkerSendEvents, NatsWorkerSubscribe, NatsWorkerUnsubscribe } from '@src/modules';
 import { createAppJwt } from '@src/modules/nats/utils';
-import { isMockedApi } from '@src/utils/env';
+import { getAccessToken, isMockedApi } from '@src/utils';
 import exampleData from '../data.json';
 import { liquidityPoolState, loadData, setLiquidityPoolItems } from '../slice';
 import { LiquidityPoolItem } from '../types';
@@ -49,8 +49,7 @@ interface ConnectToNatsOptions {
 
 function connectToNats({ onMessages, onError }: ConnectToNatsOptions) {
   const worker = new Worker(new URL('../../../modules/nats/worker.ts', import.meta.url));
-  // @TODO extract to env variable
-  const jwt = createAppJwt('SAALVTY2PLMYU4FHAZTNASYM4CSV5LOQX2NLMM757BCAIFIVIQDUNLQASI');
+  const jwt = createAppJwt(getAccessToken());
   const subscribeEvent: NatsWorkerSubscribe = {
     type: 'subscribe',
     jwt,
