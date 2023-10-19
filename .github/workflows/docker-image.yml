@@ -21,4 +21,6 @@ jobs:
 
 
     - name: Build the Docker image for dApp
-      run: docker build . --file dapp/docker/Dockerfile --tag swapscope-dapp:$(date +%s)
+      run: |
+        cd dapp
+        docker build -f docker/Dockerfile -t swapscope-dapp:$(date +%s) .
