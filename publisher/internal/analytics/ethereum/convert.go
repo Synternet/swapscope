@@ -57,18 +57,19 @@ func convertToListOfEventSignatures(eventHeaders []string) map[string]struct{} {
 
 // convertTicksToRatios converts ticks received from "Mint" event to understandable token ratios.
 // More info: http://atiselsts.github.io/pdfs/uniswap-v3-liquidity-math.pdf
-func convertTicksToRatios(liqAdd LiquidityAddition) (float64, float64, bool) {
+func convertTicksToRatios(position Position) (float64, float64, bool) {
 	reverseOrder := false
-	tokDec0, tokDec1 := liqAdd.Token0.Decimals, liqAdd.Token1.Decimals
-	lowerTickRatio, upperTickRatio := 0.0, 0.0
+	token0, token1 := position.Token0, position.Token1
+	tokDec0, tokDec1 := token0.Decimals, token1.Decimals
+	lowerTick, upperTick := position.LowerTick, position.UpperTick
 
-	lowerTickRatio = math.Pow(1.0001, float64(liqAdd.LowerTick)) / math.Pow(10, float64(tokDec1-tokDec0))
-	upperTickRatio = math.Pow(1.0001, float64(liqAdd.UpperTick)) / math.Pow(10, float64(tokDec1-tokDec0))
+	lowerTickRatio := math.Pow(1.0001, float64(lowerTick)) / math.Pow(10, float64(tokDec1-tokDec0))
+	upperTickRatio := math.Pow(1.0001, float64(upperTick)) / math.Pow(10, float64(tokDec1-tokDec0))
 
-	if isStableOrNativeInvolved(liqAdd) && isOrderCorrect(liqAdd) {
+	if isStableOrNativeInvolved(position) && isOrderCorrect(position) {
 		lowerTickRatio = 1 / lowerTickRatio
 		upperTickRatio = 1 / upperTickRatio
-	} else if isStableOrNativeInvolved(liqAdd) {
+	} else if isStableOrNativeInvolved(position) {
 		reverseOrder = true
 	}
 	return lowerTickRatio, upperTickRatio, reverseOrder
@@ -90,4 +91,22 @@ func (a *Analytics) convertTransferAmount(amountHex string, decimals int) float6
 	scaleDecFactor := new(big.Float).SetFloat64(math.Pow10(decimals))
 	amountScaled, _ := new(big.Float).Quo(amountFloat, scaleDecFactor).Float64() // amount / 10^decimals
 	return amountScaled
+}
+
+func splitLogDatatoHexStrings(data string) (string, string, string, error) {
+	const (
+		AmountOffset            = 2
+		AmountToken0Size        = 64
+		AmountToken1Size        = 64
+		RequiredDataFieldLength = 194
+	)
+
+	if len(data) != RequiredDataFieldLength {
+		return "", "", "", fmt.Errorf("the data field length is not of expected size, could not parse amount fields.")
+	}
+	amountHex := "0x" + data[AmountOffset:AmountOffset+AmountToken0Size]
+	amountToken0Hex := "0x" + data[AmountOffset+AmountToken0Size:AmountOffset+AmountToken0Size+AmountToken0Size]
+	amountToken1Hex := "0x" + data[AmountOffset+AmountToken0Size+AmountToken1Size:]
+
+	return amountHex, amountToken0Hex, amountToken1Hex, nil
 }

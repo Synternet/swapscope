@@ -12,6 +12,7 @@ import (
 var eventsToTrack = []string{
 	"Mint(address,address,int24,int24,uint128,uint256,uint256)",
 	"Transfer(address,address,uint256)",
+	"Burn(address,int24,int24,uint128,uint256,uint256)",
 }
 
 var eventsToAvoid = []string{
@@ -40,6 +41,7 @@ type Analytics struct {
 	eventLogCache     *cache.Cache
 	signatureMint     string
 	signatureTransfer string
+	signatureBurn     string
 	signaturesToAvoid map[string]struct{}
 }
 
@@ -63,6 +65,7 @@ func New(ctx context.Context, db repository.Repository, opts ...Option) (*Analyt
 
 	ret.signatureMint = convertToEventSignature(eventsToTrack[0])
 	ret.signatureTransfer = convertToEventSignature(eventsToTrack[1])
+	ret.signatureBurn = convertToEventSignature(eventsToTrack[2])
 	ret.signaturesToAvoid = convertToListOfEventSignatures(eventsToAvoid)
 
 	return ret, nil
