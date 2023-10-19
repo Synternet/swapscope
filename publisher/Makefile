@@ -6,8 +6,8 @@ DOCKERFILE_PROD=$(BUILD_PATH)/Dockerfile
 DOCKERFILE_DEV=$(BUILD_PATH)/Dockerfile.dev
 
 # Define the name of the binary and Docker image
-BINARY_NAME=liquial
-DOCKER_IMAGE_NAME=liquial
+BINARY_NAME=swapscope
+DOCKER_IMAGE_NAME=swapscope
 
 # Define the build flags for go build
 BUILD_FLAGS=-ldflags="-s -w"

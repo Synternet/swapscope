@@ -15,14 +15,14 @@ Already a pro? Just edit this README.md and make it your own. Want to make it ea
 
 ```
 cd existing_repo
-git remote add origin https://gitlab.com/syntropynet/amberdm/publisher/liquial.git
+git remote add origin https://github.com/SyntropyNet/swapscope.git
 git branch -M master
 git push -uf origin master
 ```
 
 ## Integrate with your tools
 
-- [ ] [Set up project integrations](https://gitlab.com/syntropynet/amberdm/publisher/liquial/-/settings/integrations)
+- [ ] [Set up project integrations](https://github.com/SyntropyNet/swapscope/-/settings/integrations)
 
 ## Collaborate with your team
 
