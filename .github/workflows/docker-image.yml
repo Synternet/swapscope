@@ -2,7 +2,7 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "add-CI-for-image-builds" ]
   pull_request:
     branches: [ "main" ]
 
@@ -15,4 +15,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image for dApp
-      run: docker build . --file /dapp/docker/Dockerfile --tag swapscope-dapp:$(date +%s)
+      run: docker build . --file dapp/docker/Dockerfile --tag swapscope-dapp:$(date +%s)
