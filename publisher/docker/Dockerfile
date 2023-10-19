@@ -8,7 +8,7 @@ COPY . /home/src
 WORKDIR /home/src
 
 # Build components.
-RUN CGO_ENABLED=0 go build -v -o . -installsuffix cgo -ldflags="-w -s" ./cmd/swapscope
+RUN make build
 
 #
 # 2. Runtime Container
@@ -27,6 +27,6 @@ RUN apk add --update --no-cache \
     echo "${TZ}" > /etc/timezone
 
 WORKDIR /home/app
-COPY --from=build /home/src/swapscope .
+COPY --from=build /home/src/dist/swapscope .
 
 CMD ["sh", "-c", "./swapscope --nats ${NATS_HOSTS} --nats-jwt ${NATS_JWT} --nats-nkey ${NATS_NKEY} --pub-subject-prefix ${PUB_SUBJECT_PREFIX}"]
