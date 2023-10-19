@@ -16,8 +16,9 @@ jobs:
     - name: Check out the repo
       uses: actions/checkout@v3
     
-    - name:
-      run: ls -lsa
-      
+    - name: List the workspace contents
+      run: ls -lsa ${{ github.workspace }}
+
+
     - name: Build the Docker image for dApp
       run: docker build . --file dapp/docker/Dockerfile --tag swapscope-dapp:$(date +%s)
