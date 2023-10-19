@@ -14,8 +14,7 @@ RUN npm run export
 
 FROM nginx:1.23.3-alpine
 COPY --from=build-stage /app/out /usr/share/nginx/html
-RUN ls -lsa
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY ./nginx.conf /etc/nginx/conf.d/default.conf
 CMD [ "nginx","-g","daemon off;" ]
 EXPOSE 80
 
