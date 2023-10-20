@@ -1,6 +1,7 @@
 package ethereum
 
 import (
+	"github.com/SyntropyNet/swapscope/publisher/pkg/analytics"
 	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
 )
 
@@ -21,6 +22,7 @@ type Removal struct {
 	AnalyticsInterface
 	DatabaseInterface
 	CacheInterface
+	Send analytics.Sender
 	//TODO: Fees earned and collected
 	//TokenEarned0 TokenTransaction
 	//TokenEarned1 TokenTransaction
@@ -31,6 +33,7 @@ type Addition struct {
 	AnalyticsInterface
 	DatabaseInterface
 	CacheInterface
+	Send analytics.Sender
 }
 
 type Position struct {

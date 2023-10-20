@@ -18,9 +18,9 @@ func (a *Analytics) ProcessMessage(msg analytics.Message, send analytics.Sender)
 	var operation Operation
 	switch {
 	case a.isBurnEvent(eLog):
-		operation = NewRemovalOperation(a.db, a, a.eventLogCache)
+		operation = NewRemovalOperation(a.db, a.eventLogCache, a, send)
 	case a.isMintEvent(eLog):
-		operation = NewAdditionOperation(a.db, a, a.eventLogCache)
+		operation = NewAdditionOperation(a.db, a.eventLogCache, a, send)
 	default:
 		return nil
 	}
@@ -41,5 +41,5 @@ func (a *Analytics) ProcessMessage(msg analytics.Message, send analytics.Sender)
 	log.Println("Operation processed:", operation.String())
 
 	//return operation.Save(msg.Timestamp) // Option to save additions and removals to DB
-	return operation.Publish(msg.Timestamp, send)
+	return operation.Publish(msg.Timestamp)
 }

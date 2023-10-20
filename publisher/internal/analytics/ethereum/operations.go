@@ -40,23 +40,25 @@ type Operation interface {
 	Extract(EventLog) (Operation, error)
 	String() string
 	CanPublish() bool
-	Publish(time.Time, analytics.Sender) error
+	Publish(time.Time) error
 	Save(time.Time) error
 }
 
-func NewAdditionOperation(db DatabaseInterface, a AnalyticsInterface, cache *cache.Cache) Addition {
+func NewAdditionOperation(db DatabaseInterface, cache *cache.Cache, a AnalyticsInterface, sender analytics.Sender) Addition {
 	return Addition{
 		DatabaseInterface:  db,
-		AnalyticsInterface: a,
 		CacheInterface:     cache,
+		AnalyticsInterface: a,
+		Send:               sender,
 	}
 }
 
-func NewRemovalOperation(db DatabaseInterface, a AnalyticsInterface, cache *cache.Cache) Removal {
+func NewRemovalOperation(db DatabaseInterface, cache *cache.Cache, a AnalyticsInterface, sender analytics.Sender) Removal {
 	return Removal{
 		DatabaseInterface:  db,
 		AnalyticsInterface: a,
 		CacheInterface:     cache,
+		Send:               sender,
 	}
 }
 
@@ -200,7 +202,7 @@ func (add Addition) String() string {
 		add.CurrentRatio)
 }
 
-func (rem Removal) Publish(timestamp time.Time, send analytics.Sender) error {
+func (rem Removal) Publish(timestamp time.Time) error {
 	removalMessage := types.RemovalMessage{
 		Timestamp:         timestamp,
 		Address:           rem.Address,
@@ -221,10 +223,10 @@ func (rem Removal) Publish(timestamp time.Time, send analytics.Sender) error {
 	}
 
 	streamName := strings.ToLower(fmt.Sprintf("remove.%s.%s", rem.Token0.Symbol, rem.Token1.Symbol))
-	return send(removalJson, streamName)
+	return rem.Send(removalJson, streamName)
 }
 
-func (add Addition) Publish(timestamp time.Time, send analytics.Sender) error {
+func (add Addition) Publish(timestamp time.Time) error {
 	additionMessage := types.AdditionMessage{
 		Timestamp:         timestamp,
 		Address:           add.Address,
@@ -245,5 +247,5 @@ func (add Addition) Publish(timestamp time.Time, send analytics.Sender) error {
 	}
 
 	streamName := strings.ToLower(fmt.Sprintf("add.%s.%s", add.Token0.Symbol, add.Token1.Symbol))
-	return send(additionJson, streamName)
+	return add.Send(additionJson, streamName)
 }

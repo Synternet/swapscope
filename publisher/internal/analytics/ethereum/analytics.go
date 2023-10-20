@@ -9,12 +9,6 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-var eventsToTrack = []string{
-	"Mint(address,address,int24,int24,uint128,uint256,uint256)",
-	"Transfer(address,address,uint256)",
-	"Burn(address,int24,int24,uint128,uint256,uint256)",
-}
-
 var eventsToAvoid = []string{
 	"Swap(address,address,int256,int256,uint160,uint128,int24)",
 	"Swap(address,uint256,uint256,uint256,uint256,address)",
@@ -31,6 +25,9 @@ var eventsToAvoid = []string{
 const (
 	subSubject            = "syntropy.ethereum.log-event"
 	uniswapPositionsOwner = "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
+	mintSig               = "0x7a53080b" //Mint(address,address,int24,int24,uint128,uint256,uint256)
+	transferSig           = "0xddf252ad" //Transfer(address,address,uint256)
+	burnSig               = "0x0c396cd9" //Burn(address,int24,int24,uint128,uint256,uint256)
 )
 
 type Analytics struct {
@@ -63,9 +60,9 @@ func New(ctx context.Context, db repository.Repository, opts ...Option) (*Analyt
 
 	ret.eventLogCache = cache.New(ret.Options.eventLogCacheExpirationTime, ret.Options.eventLogCachePurgeTime)
 
-	ret.signatureMint = convertToEventSignature(eventsToTrack[0])
-	ret.signatureTransfer = convertToEventSignature(eventsToTrack[1])
-	ret.signatureBurn = convertToEventSignature(eventsToTrack[2])
+	ret.signatureMint = mintSig
+	ret.signatureTransfer = transferSig
+	ret.signatureBurn = burnSig
 	ret.signaturesToAvoid = convertToListOfEventSignatures(eventsToAvoid)
 
 	return ret, nil

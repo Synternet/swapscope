@@ -68,7 +68,7 @@ func (s *Service) makeBufferedHandler(rungroup *errgroup.Group, name string, han
 
 	return func(b []byte, subj string) error {
 		msg := analytics.Message{
-			Timestamp: time.Now(),
+			Timestamp: time.Now().UTC(),
 			Subject:   subj,
 			Data:      b,
 		}
