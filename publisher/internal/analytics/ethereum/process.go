@@ -18,15 +18,15 @@ func (a *Analytics) ProcessMessage(msg analytics.Message, send analytics.Sender)
 	var operation Operation
 	switch {
 	case a.isBurnEvent(eLog):
-		operation = Removal{}
+		operation = NewRemovalOperation(a.db, a, a.eventLogCache)
 	case a.isMintEvent(eLog):
-		operation = Addition{}
+		operation = NewAdditionOperation(a.db, a, a.eventLogCache)
 	default:
 		return nil
 	}
 
 	var err error
-	operation, err = operation.ExtractFromEventLogs(eLog, a)
+	operation, err = operation.Extract(eLog)
 	if err != nil {
 		log.Printf("%s\n", err)
 		return nil
@@ -37,9 +37,9 @@ func (a *Analytics) ProcessMessage(msg analytics.Message, send analytics.Sender)
 		return nil
 	}
 
-	log.Println(eLog.TransactionHash)
-	log.Println(operation.PrintPretty())
+	log.Println("Tx hash:", eLog.TransactionHash)
+	log.Println("Operation processed:", operation.String())
 
-	//return operation.SaveToDB(msg.Timestamp, a) // Do not save liquidity additions and removals to DB
-	return operation.PublishToNATS(msg.Timestamp, send)
+	//return operation.Save(msg.Timestamp) // Option to save additions and removals to DB
+	return operation.Publish(msg.Timestamp, send)
 }

@@ -103,19 +103,19 @@ func (r *Repository) SaveAddition(lpAdd repository.Addition) error {
 	return result.Error
 }
 
-func (r *Repository) SaveRemoval(lpAdd repository.Removal) error {
+func (r *Repository) SaveRemoval(lpRem repository.Removal) error {
 	remove := Removal{
-		TimestampReceived: lpAdd.TimestampReceived,
-		LPoolAddress:      lpAdd.LPoolAddress,
-		Token0Symbol:      lpAdd.Token0Symbol,
-		Token1Symbol:      lpAdd.Token1Symbol,
-		Token0Amount:      lpAdd.Token0Amount,
-		Token1Amount:      lpAdd.Token1Amount,
-		LowerActualRatio:  lpAdd.LowerRatio,
-		UpperActualRatio:  lpAdd.UpperRatio,
-		Token0PriceUsd:    lpAdd.Token0PriceUsd,
-		Token1PriceUsd:    lpAdd.Token1PriceUsd,
-		TxHash:            lpAdd.TxHash,
+		TimestampReceived: lpRem.TimestampReceived,
+		LPoolAddress:      lpRem.LPoolAddress,
+		Token0Symbol:      lpRem.Token0Symbol,
+		Token1Symbol:      lpRem.Token1Symbol,
+		Token0Amount:      lpRem.Token0Amount,
+		Token1Amount:      lpRem.Token1Amount,
+		LowerActualRatio:  lpRem.LowerRatio,
+		UpperActualRatio:  lpRem.UpperRatio,
+		Token0PriceUsd:    lpRem.Token0PriceUsd,
+		Token1PriceUsd:    lpRem.Token1PriceUsd,
+		TxHash:            lpRem.TxHash,
 	}
 	result := r.dbCon.Table("eth_liq_removals_local").Create(&remove)
 	return result.Error
