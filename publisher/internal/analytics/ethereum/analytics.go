@@ -40,6 +40,10 @@ type Analytics struct {
 	eventLogCache *cache.Cache
 }
 
+func init() {
+	signaturesToAvoid = convertToListOfEventSignatures(eventsToAvoid)
+}
+
 func New(ctx context.Context, db repository.Repository, opts ...Option) (*Analytics, error) {
 	ret := &Analytics{
 		ctx: ctx,
@@ -57,8 +61,6 @@ func New(ctx context.Context, db repository.Repository, opts ...Option) (*Analyt
 	}
 
 	ret.eventLogCache = cache.New(ret.Options.eventLogCacheExpirationTime, ret.Options.eventLogCachePurgeTime)
-
-	signaturesToAvoid = convertToListOfEventSignatures(eventsToAvoid)
 
 	return ret, nil
 }

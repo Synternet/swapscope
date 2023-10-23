@@ -288,11 +288,11 @@ func (op OperationBase) checkAndUpdateMissingToken(evLog EventLog, addPos Positi
 		return addPos
 	}
 
-	tokenInOrder0, err := op.fetchers.tokenFetcher.Token(tok0Address)
+	tokenInOrder0, err := op.getToken(tok0Address)
 	if err != nil {
 		log.Println("Failed fetching token information: ", err.Error())
 	}
-	tokenInOrder1, err := op.fetchers.tokenFetcher.Token(tok1Address)
+	tokenInOrder1, err := op.getToken(tok1Address)
 	if err != nil {
 		log.Println("Failed fetching token information: ", err.Error())
 	}
@@ -312,7 +312,7 @@ func (op OperationBase) handleLiquidityTransfer(evLog EventLog, liqAdd Position)
 		return liqAdd
 	}
 
-	t, err := op.fetchers.tokenFetcher.Token(tokenAddress)
+	t, err := op.getToken(tokenAddress)
 	if err != nil {
 		log.Println("Failed fetching token information: ", err.Error())
 	}
@@ -336,17 +336,25 @@ func (op OperationBase) handleLiquidityTransfer(evLog EventLog, liqAdd Position)
 
 func (op OperationBase) includeTokenPrices(pos Position) Position {
 	// Place here to implement price cache?
-	price, err := op.fetchers.priceFetcher.Price(pos.Token0.Address)
+	price, err := op.getPrice(pos.Token0.Address)
 	if err != nil {
 		log.Println("failed to feetch Token0 price: ", err.Error())
 	}
 	pos.Token0.Price = price.Value
 	if !strings.EqualFold(pos.Token1.Address, "") {
-		price, err := op.fetchers.priceFetcher.Price(pos.Token1.Address)
+		price, err := op.getPrice(pos.Token1.Address)
 		if err != nil {
 			log.Println("failed to feetch Token1 price: ", err.Error())
 		}
 		pos.Token1.Price = price.Value
 	}
 	return pos
+}
+
+func (op OperationBase) getToken(address string) (repository.Token, error) {
+	return op.fetchers.tokenFetcher.Token(address)
+}
+
+func (op OperationBase) getPrice(address string) (repository.TokenPrice, error) {
+	return op.fetchers.priceFetcher.Price(address)
 }
