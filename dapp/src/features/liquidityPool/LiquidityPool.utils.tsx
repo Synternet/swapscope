@@ -1,4 +1,5 @@
 import { formatUsdCompact, isMax, isMin } from '@src/utils';
+import { isWithinInterval } from 'date-fns';
 import { LiquidityPoolItem, LiquiditySizeFilterOptions } from './types';
 
 const poolSizeValues = [0, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9];
@@ -25,7 +26,7 @@ export function getPoolSizeFilterOptions(list: LiquidityPoolItem[]): LiquiditySi
 
 export function getPoolItemTotalUsd(item: LiquidityPoolItem) {
   const { pair } = item;
-  return pair[0].price * pair[0].amount + pair[1].price * pair[1].amount;
+  return pair[0].priceUSD * pair[0].amount + pair[1].priceUSD * pair[1].amount;
 }
 
 export function getPriceRange(list: LiquidityPoolItem[]): [number, number] {
@@ -40,4 +41,30 @@ export function getPriceRange(list: LiquidityPoolItem[]): [number, number] {
   );
 
   return [min, max];
+}
+
+export function filterItems(
+  items: LiquidityPoolItem[],
+  filter: {
+    liquiditySize: [number, number];
+    dateRange: [string, string];
+  },
+) {
+  const { liquiditySize, dateRange } = filter;
+  return items.filter((item) => {
+    const amount = getPoolItemTotalUsd(item);
+    if (amount > liquiditySize[1] || amount < liquiditySize[0]) {
+      return false;
+    }
+
+    if (!itemIsInDateRange(item, dateRange)) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+export function itemIsInDateRange(item: LiquidityPoolItem, dateRange: [string, string]){
+  return isWithinInterval(new Date(item.timestamp), { start: new Date(dateRange[0]), end: new Date(dateRange[1]) });
 }

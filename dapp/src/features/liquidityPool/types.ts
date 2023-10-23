@@ -1,7 +1,7 @@
 export interface LiquidityPoolItemToken {
   symbol: string;
   amount: number;
-  price: number;
+  priceUSD: number;
 }
 
 export interface LiquidityPoolItem {

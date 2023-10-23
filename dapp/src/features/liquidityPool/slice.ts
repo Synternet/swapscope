@@ -1,11 +1,12 @@
 import { PayloadAction, createAction, createSlice } from '@reduxjs/toolkit';
+import { dateNow } from '@src/utils';
 import { addHours } from 'date-fns';
 import { getPoolSizeFilterOptions, getPriceRange, poolSizeSteps } from './LiquidityPool.utils';
 import { LiquidityPoolItem, LiquiditySizeFilterOptions } from './types';
 
 interface LiquidityPoolState {
   items: LiquidityPoolItem[];
-  dateRange: [string, string];
+  dateFilter: { hours: number; range: [string, string] };
   priceRange: [number, number];
   liquiditySizeFilter: LiquiditySizeFilterOptions;
   revision: string;
@@ -13,7 +14,7 @@ interface LiquidityPoolState {
 
 const initialState = (): LiquidityPoolState => ({
   items: [],
-  dateRange: [addHours(new Date(), -24).toISOString(), new Date().toISOString()],
+  dateFilter: { hours: 12, range: [addHours(dateNow(), -12).toISOString(), new Date(dateNow()).toISOString()] },
   priceRange: [0, 100],
   liquiditySizeFilter: {
     max: poolSizeSteps[poolSizeSteps.length - 1].value,
@@ -33,9 +34,19 @@ const slice = createSlice({
       const { items } = payload;
       state.items = items;
       state.liquiditySizeFilter = getPoolSizeFilterOptions(items);
-      state.dateRange = [items[0].timestamp, items[items.length - 1].timestamp];
+      state.dateFilter.range = [
+        addHours(dateNow(), -state.dateFilter.hours).toISOString(),
+        new Date(dateNow()).toISOString(),
+      ];
       state.priceRange = getPriceRange(items);
       state.revision = Date.now().toString();
+    },
+    changeDateFilter: (state, { payload }: PayloadAction<{ hours: number }>) => {
+      const { hours } = payload;
+      state.dateFilter = {
+        hours: hours,
+        range: [addHours(dateNow(), -hours).toISOString(), new Date(dateNow()).toISOString()],
+      };
     },
     resetLiquidityPoolState: () => initialState(),
   },
@@ -44,7 +55,7 @@ const slice = createSlice({
 export const liquidityPoolReducer = slice.reducer;
 export const liquidityPoolState = (state: RootState) => state.liquidityPool;
 
-export const { setLiquiditySize, setLiquidityPoolItems } = slice.actions;
+export const { setLiquiditySize, setLiquidityPoolItems, changeDateFilter } = slice.actions;
 
 const prefix = slice.name;
 export const loadData = createAction(`${prefix}/loadData`);
