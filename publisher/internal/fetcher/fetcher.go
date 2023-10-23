@@ -166,6 +166,9 @@ func (f *RateLimitedFetcher[T]) Fetch(ctxMain context.Context, url string) (T, e
 		if err != nil {
 			fmt.Println("Error:", err)
 		}
+		if response.StatusCode == http.StatusNotFound {
+			return result, fmt.Errorf("error on HTTP request. Status code: %d with message: %s", response.StatusCode, body) // Do not print head for 404
+		}
 		return result, fmt.Errorf("error on HTTP request. Status code: %d with message: %s and headers %v", response.StatusCode, body, response.Header)
 	}
 

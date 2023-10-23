@@ -33,8 +33,9 @@ func New(host string, port string, user string, password string, dbname string) 
 
 	// Create tables for data structures (if table already exists it will not be overwritten)
 	dbCon.Table("eth_tokens_local").AutoMigrate(&Token{})
-	dbCon.Table("eth_liq_pools_local").AutoMigrate(&LiqPool{})
-	dbCon.Table("eth_liq_adds_local").AutoMigrate(&LiqAdditionRecord{})
+	dbCon.Table("eth_liq_pools_local").AutoMigrate(&Pool{})
+	dbCon.Table("eth_liq_adds_local").AutoMigrate(&Addition{})
+	dbCon.Table("eth_liq_removals_local").AutoMigrate(&Removal{})
 	return ret, nil
 }
 
@@ -46,16 +47,15 @@ func (r *Repository) GetToken(address string) (repository.Token, bool) {
 		log.Println("Error fetching Token from DB:", result.Error)
 	}
 	return repository.Token{
-		Address:     token.Address,
-		Symbol:      token.Symbol,
-		Name:        token.Name,
-		Decimals:    token.Decimals,
-		TotalSupply: token.TotalSupply,
+		Address:  token.Address,
+		Symbol:   token.Symbol,
+		Name:     token.Name,
+		Decimals: token.Decimals,
 	}, isTokenFound
 }
 
-func (r *Repository) GetTokenPairAddresses(liqPoolAddress string) (string, string, bool) {
-	var liqPool LiqPool
+func (r *Repository) GetPoolPairAddresses(liqPoolAddress string) (string, string, bool) {
+	var liqPool Pool
 	result := r.dbCon.Table("eth_liq_pools_local").Limit(1).Find(&liqPool, "address = ?", liqPoolAddress)
 	isPoolFound := result.RowsAffected != 0
 	if result.Error != nil {
@@ -66,18 +66,17 @@ func (r *Repository) GetTokenPairAddresses(liqPoolAddress string) (string, strin
 
 func (r *Repository) AddToken(token repository.Token) error {
 	newToken := Token{
-		Address:     token.Address,
-		Symbol:      token.Symbol,
-		Name:        token.Name,
-		Decimals:    token.Decimals,
-		TotalSupply: token.TotalSupply,
+		Address:  token.Address,
+		Symbol:   token.Symbol,
+		Name:     token.Name,
+		Decimals: token.Decimals,
 	}
 	result := r.dbCon.Table("eth_tokens_local").Create(&newToken)
 	return result.Error
 }
 
-func (r *Repository) AddLiquidityPool(pool repository.LiquidityPool) error {
-	newPool := LiqPool{
+func (r *Repository) SavePool(pool repository.Pool) error {
+	newPool := Pool{
 		Address:       pool.Address,
 		Token0Address: pool.Token0Address,
 		Token1Address: pool.Token1Address,
@@ -86,19 +85,38 @@ func (r *Repository) AddLiquidityPool(pool repository.LiquidityPool) error {
 	return result.Error
 }
 
-func (r *Repository) AddLiquidityPoolAddition(lpAdd repository.LiquidityEntry) error {
-	newLpAdd := LiqAdditionRecord{
-		LPoolAddress:     lpAdd.LPoolAddress,
-		Token0Symbol:     lpAdd.Token0Symbol,
-		Token1Symbol:     lpAdd.Token1Symbol,
-		Token0Amount:     lpAdd.Token0Amount,
-		Token1Amount:     lpAdd.Token1Amount,
-		LowerActualRatio: lpAdd.LowerRatio,
-		UpperActualRatio: lpAdd.UpperRatio,
-		Token0PriceUsd:   lpAdd.Token0PriceUsd,
-		Token1PriceUsd:   lpAdd.Token1PriceUsd,
-		TxHash:           lpAdd.TxHash,
+func (r *Repository) SaveAddition(lpAdd repository.Addition) error {
+	add := Addition{
+		TimestampReceived: lpAdd.TimestampReceived,
+		LPoolAddress:      lpAdd.LPoolAddress,
+		Token0Symbol:      lpAdd.Token0Symbol,
+		Token1Symbol:      lpAdd.Token1Symbol,
+		Token0Amount:      lpAdd.Token0Amount,
+		Token1Amount:      lpAdd.Token1Amount,
+		LowerActualRatio:  lpAdd.LowerRatio,
+		UpperActualRatio:  lpAdd.UpperRatio,
+		Token0PriceUsd:    lpAdd.Token0PriceUsd,
+		Token1PriceUsd:    lpAdd.Token1PriceUsd,
+		TxHash:            lpAdd.TxHash,
 	}
-	result := r.dbCon.Table("eth_liq_adds_local").Create(&newLpAdd)
+	result := r.dbCon.Table("eth_liq_adds_local").Create(&add)
+	return result.Error
+}
+
+func (r *Repository) SaveRemoval(lpRem repository.Removal) error {
+	remove := Removal{
+		TimestampReceived: lpRem.TimestampReceived,
+		LPoolAddress:      lpRem.LPoolAddress,
+		Token0Symbol:      lpRem.Token0Symbol,
+		Token1Symbol:      lpRem.Token1Symbol,
+		Token0Amount:      lpRem.Token0Amount,
+		Token1Amount:      lpRem.Token1Amount,
+		LowerActualRatio:  lpRem.LowerRatio,
+		UpperActualRatio:  lpRem.UpperRatio,
+		Token0PriceUsd:    lpRem.Token0PriceUsd,
+		Token1PriceUsd:    lpRem.Token1PriceUsd,
+		TxHash:            lpRem.TxHash,
+	}
+	result := r.dbCon.Table("eth_liq_removals_local").Create(&remove)
 	return result.Error
 }

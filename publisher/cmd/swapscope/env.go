@@ -51,8 +51,8 @@ func setupDefaults() {
 	setEnvDefaults(LogCachePurgeTimeName, "3m")
 	setEnvDefaults(PriceCacheExpirationTimeName, "2m")
 	setEnvDefaults(PriceCachePurgeTimeName, "3m")
-	setEnvDefaults(ApiFetchTimeout, "10s")
-	setEnvDefaults(ApiRateLimit, "10")
+	setEnvDefaults(ApiFetchTimeout, "2m")
+	setEnvDefaults(ApiRateLimit, "12")
 	setEnvDefaults(CoinGeckoApiUrl, "https://api.coingecko.com/api/v3")
 }
 
