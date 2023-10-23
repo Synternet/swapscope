@@ -85,7 +85,7 @@ func parseEventLogMessage(data []byte) EventLog {
 }
 
 // convertTransferAmount converts Transfer's hex amount into scaled actual amount of tokens
-func (a *Analytics) convertTransferAmount(amountHex string, decimals int) float64 {
+func convertTransferAmount(amountHex string, decimals int) float64 {
 	amount := convertHexToBigInt(amountHex)
 	amountFloat := new(big.Float).SetInt(amount)
 	scaleDecFactor := new(big.Float).SetFloat64(math.Pow10(decimals))

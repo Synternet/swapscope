@@ -13,9 +13,9 @@ func isUniswapPositionsNFT(address string) bool {
 	return false
 }
 
-func (a *Analytics) isAvoidEvent(evLog EventLog) bool {
+func isAvoidEvent(evLog EventLog) bool {
 	topic0 := evLog.Topics[0]
-	_, found := a.signaturesToAvoid[topic0[:10]]
+	_, found := signaturesToAvoid[topic0[:10]]
 	if found {
 		log.Println("FOUND EVENT TO AVOID! (all transfers until now are invalid):", topic0[:10])
 		return true
@@ -23,16 +23,16 @@ func (a *Analytics) isAvoidEvent(evLog EventLog) bool {
 	return false
 }
 
-func (a *Analytics) isTransferEvent(evLog EventLog) bool {
-	return strings.HasPrefix(evLog.Topics[0], a.signatureTransfer)
+func isTransferEvent(evLog EventLog) bool {
+	return strings.HasPrefix(evLog.Topics[0], transferSig)
 }
 
 func (a *Analytics) isMintEvent(evLog EventLog) bool {
-	return strings.HasPrefix(evLog.Topics[0], a.signatureMint)
+	return strings.HasPrefix(evLog.Topics[0], mintSig)
 }
 
 func (a *Analytics) isBurnEvent(evLog EventLog) bool {
-	return strings.HasPrefix(evLog.Topics[0], a.signatureBurn)
+	return strings.HasPrefix(evLog.Topics[0], burnSig)
 }
 
 func hasTopics(evLog EventLog) bool {

@@ -8,40 +8,14 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-// checkAndUpdateMissingToken expands Liq. Add. record if only 1 token was transferred
-// Second token is found and appended
-// The order of tokens is fixed based on historical results (when 2 tokens were transferred for this LP)
-func (a *Analytics) checkAndUpdateMissingToken(evLog EventLog, addPos Position) Position {
-	liqPoolAddress := strings.ToLower(evLog.Address)
-
-	tok0Address, tok1Address, foundPool := a.db.GetPoolPairAddresses(liqPoolAddress)
-	if !foundPool {
-		log.Println("Could not get token information of pool", liqPoolAddress)
-		return addPos
-	}
-
-	tokenInOrder0, err := a.tokenFetcher.Token(tok0Address)
-	if err != nil {
-		log.Println("Failed fetching token information: ", err.Error())
-	}
-	tokenInOrder1, err := a.tokenFetcher.Token(tok1Address)
-	if err != nil {
-		log.Println("Failed fetching token information: ", err.Error())
-	}
-	addPos = updateOrderOfTokens(addPos, tokenInOrder0, tokenInOrder1)
-
-	log.Printf("Added second missing token from known pool %s", liqPoolAddress)
-	return addPos
-}
-
-func (a *Analytics) calculatePosition(evLog EventLog, addPos Position) Position {
+func calculatePosition(evLog EventLog, addPos Position) Position {
 	addPos.LowerTick = int(convertHexToBigInt(evLog.Topics[2]).Int64())
 	addPos.UpperTick = int(convertHexToBigInt(evLog.Topics[3]).Int64())
 	addPos.Address = evLog.Address
 	addPos.TxHash = evLog.TransactionHash
-	a.savePool(addPos)
+	//a.savePool(addPos)
 
-	addPos = a.decodeLowerUpperTicks(addPos) // Decoding / expanding "Mint" event
+	addPos = decodeLowerUpperTicks(addPos) // Decoding / expanding "Mint" event
 
 	if addPos.Token0.Price > 0 && addPos.Token1.Price > 0 {
 		addPos.CurrentRatio = addPos.Token1.Price / addPos.Token0.Price
@@ -83,39 +57,7 @@ func (a *Analytics) addLogToTxCache(eLog EventLog) error {
 	return nil
 }
 
-// updateLiqAddRecordWithTransfer decodes Transfer event.
-// Getting token that was transferred and calculating amount transferred.
-// Keeping track of tokens involved in current Liq. Add. event.
-func (a *Analytics) handleLiquidityTransfer(evLog EventLog, liqAdd Position) Position {
-	tokenAddress := evLog.Address
-	if isUniswapPositionsNFT(tokenAddress) {
-		log.Println("Uniswap positions NFT transfer.")
-		return liqAdd
-	}
-
-	t, err := a.tokenFetcher.Token(tokenAddress)
-	if err != nil {
-		log.Println("Failed fetching token information: ", err.Error())
-	}
-	amountScaled := a.convertTransferAmount(evLog.Data, t.Decimals)
-	//log.Printf("Transfer %f of %s(%s)", amountScaled, tokenAddress, t.Symbol)
-
-	// Do not include transactions which transferred 0 (usually there is another just after this one)
-	if amountScaled == 0 || strings.EqualFold(liqAdd.Token0.Address, tokenAddress) {
-		return liqAdd
-	}
-
-	if strings.EqualFold(liqAdd.Token0.Address, "") {
-		liqAdd.Token0.Token = t
-		liqAdd.Token0.Amount = amountScaled
-	} else if strings.EqualFold(liqAdd.Token1.Address, "") {
-		liqAdd.Token1.Token = t
-		liqAdd.Token1.Amount = amountScaled
-	}
-	return liqAdd
-}
-
-func (a *Analytics) decodeLowerUpperTicks(position Position) Position {
+func decodeLowerUpperTicks(position Position) Position {
 	if isEitherTokenUnknown(position) {
 		return position
 	}

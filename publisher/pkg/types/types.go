@@ -10,7 +10,7 @@ type AdditionMessage struct {
 	LowerTokenRatio   float64         `json:"lowerTokenRatio"`
 	CurrentTokenRatio float64         `json:"currentTokenRatio"`
 	UpperTokenRatio   float64         `json:"upperTokenRatio"`
-	ValueAddedUSD     float64         `json:"valueAddedUSD"`
+	ValueAddedUSD     float64         `json:"totalValueUSD"`
 	Pair              [2]TokenMessage `json:"pair"`
 	TxHash            string          `json:"txHash"`
 }
@@ -21,7 +21,7 @@ type RemovalMessage struct {
 	LowerTokenRatio   float64         `json:"lowerTokenRatio"`
 	CurrentTokenRatio float64         `json:"currentTokenRatio"`
 	UpperTokenRatio   float64         `json:"upperTokenRatio"`
-	ValueRemovedUSD   float64         `json:"valueRemovedUSD"`
+	ValueRemovedUSD   float64         `json:"totalValueUSD"`
 	Pair              [2]TokenMessage `json:"pair"`
 	TxHash            string          `json:"txHash"`
 }

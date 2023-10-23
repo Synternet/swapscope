@@ -1,7 +1,6 @@
 package ethereum
 
 import (
-	"github.com/SyntropyNet/swapscope/publisher/pkg/analytics"
 	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
 )
 
@@ -15,25 +14,6 @@ type EventLog struct {
 	BlockHash        string   `json:"blockHash"`
 	LogIndex         string   `json:"logIndex"`
 	Removed          bool     `json:"removed"`
-}
-
-type Removal struct {
-	Position
-	AnalyticsInterface
-	DatabaseInterface
-	CacheInterface
-	Send analytics.Sender
-	//TODO: Fees earned and collected
-	//TokenEarned0 TokenTransaction
-	//TokenEarned1 TokenTransaction
-}
-
-type Addition struct {
-	Position
-	AnalyticsInterface
-	DatabaseInterface
-	CacheInterface
-	Send analytics.Sender
 }
 
 type Position struct {
