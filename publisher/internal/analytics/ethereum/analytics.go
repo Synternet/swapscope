@@ -22,14 +22,19 @@ var eventsToAvoid = []string{
 	"TransformedERC20(address,address,address,uint256,uint256)",
 }
 
-var signaturesToAvoid map[string]struct{}
+var (
+	signaturesToAvoid map[string]struct{}
+	mintSig           string
+	transferSig       string
+	burnSig           string
+)
 
 const (
 	subSubject            = "syntropy.ethereum.log-event"
 	uniswapPositionsOwner = "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
-	mintSig               = "0x7a53080b" //Mint(address,address,int24,int24,uint128,uint256,uint256)
-	transferSig           = "0xddf252ad" //Transfer(address,address,uint256)
-	burnSig               = "0x0c396cd9" //Burn(address,int24,int24,uint128,uint256,uint256)
+	mintEventHeader       = "Mint(address,address,int24,int24,uint128,uint256,uint256)"
+	transferEventHeader   = "Transfer(address,address,uint256)"
+	burnEventHeader       = "Burn(address,int24,int24,uint128,uint256,uint256)"
 )
 
 type Analytics struct {
@@ -41,7 +46,10 @@ type Analytics struct {
 }
 
 func init() {
-	signaturesToAvoid = convertToListOfEventSignatures(eventsToAvoid)
+	signaturesToAvoid = convertToEventSignatures(eventsToAvoid)
+	mintSig = convertToEventSignature(mintEventHeader)
+	transferSig = convertToEventSignature(transferEventHeader)
+	burnSig = convertToEventSignature(burnEventHeader)
 }
 
 func New(ctx context.Context, db repository.Repository, opts ...Option) (*Analytics, error) {

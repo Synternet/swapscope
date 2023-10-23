@@ -43,10 +43,10 @@ func convertToEventSignature(header string) string {
 	return signature
 }
 
-// convertToListOfEventSignatures converts a list of event headers into a list of event signatures.
+// convertToEventSignatures converts a slice ofstrings (event headers) into a map of event signatures.
 // Used only to generate a list of events to "avoid" - to consider "Transfer" events accordingly.
 // All "Transfer" events before any of "avoid" events are no more considered for "Mint" event.
-func convertToListOfEventSignatures(eventHeaders []string) map[string]struct{} {
+func convertToEventSignatures(eventHeaders []string) map[string]struct{} {
 	hexValues := make(map[string]struct{})
 	for _, eventHeaderString := range eventHeaders {
 		hexValue := convertToEventSignature(eventHeaderString)
