@@ -28,7 +28,7 @@ func (a *Analytics) ProcessMessage(msg analytics.Message, send analytics.Sender)
 	var err error
 	operation, err = operation.Extract(eLog)
 	if err != nil {
-		log.Printf("%s\n", err)
+		log.Println("Failed to extract event from logs: ", err.Error())
 		return nil
 		//return err //TODO: if error is returned - whole service is stopped
 	}
