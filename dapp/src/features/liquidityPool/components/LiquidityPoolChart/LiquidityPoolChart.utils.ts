@@ -31,7 +31,7 @@ export function generateTraces({ data, filteredData, dateRange, priceRange }: Ge
   const customWidth = Math.round(barWidthPx * onePixel);
 
   const bars: Data & { base: any[] } = {
-    x: filteredData.map((x) => x.timestamp),
+    x: filteredData.map((x) => new Date(x.timestamp)),
     y: filteredData.map((x) =>
       isMin(x.lowerTokenRatio) || isMax(x.upperTokenRatio)
         ? priceRange[1] - priceRange[0]
@@ -57,7 +57,7 @@ export function generateTraces({ data, filteredData, dateRange, priceRange }: Ge
 
   const pricePoints = getPricePoints(data, dateRange);
   const line: Data = {
-    x: pricePoints.map((x) => x.timestamp),
+    x: pricePoints.map((x) => new Date(x.timestamp)),
     y: pricePoints.map((x) => x.price),
     type: 'scatter',
     name: 'Actual Price',
@@ -69,7 +69,7 @@ export function generateTraces({ data, filteredData, dateRange, priceRange }: Ge
 
   const filteredMiddlePoints = filteredData.filter((x) => !isMax(x.upperTokenRatio) && !isMin(x.lowerTokenRatio));
   var middle: Data = {
-    x: filteredMiddlePoints.map((x) => x.timestamp),
+    x: filteredMiddlePoints.map((x) => new Date(x.timestamp)),
     y: filteredMiddlePoints.map((x) =>
       isMin(x.lowerTokenRatio) || isMax(x.upperTokenRatio)
         ? (priceRange[1] + priceRange[0]) / 2

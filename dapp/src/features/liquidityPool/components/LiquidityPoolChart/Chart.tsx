@@ -1,4 +1,3 @@
-import { convertToIso } from '@src/utils';
 import { PlotRelayoutEvent } from 'plotly.js';
 import { useCallback, useEffect, useState } from 'react';
 import Plot from 'react-plotly.js';
@@ -24,7 +23,7 @@ export function Chart({ data, filteredData, dateRange: initialDateRange, priceRa
       const xStart = event['xaxis.range[0]'] ?? event['xaxis.range']?.[0];
       const xEnd = event['xaxis.range[1]'] ?? event['xaxis.range']?.[1];
       if (xStart && xEnd) {
-        setDateRange([convertToIso(xStart as string), convertToIso(xEnd as string)]);
+        setDateRange([new Date(xStart).toISOString(), new Date(xEnd).toISOString()]);
       }
 
       if (event['xaxis.autorange']) {
@@ -52,7 +51,6 @@ export function Chart({ data, filteredData, dateRange: initialDateRange, priceRa
         },
         xaxis: {
           type: 'date',
-          range: [...dateRange],
         },
         yaxis: {},
         margin: {
