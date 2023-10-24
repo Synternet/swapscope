@@ -2,6 +2,7 @@ import { formatPoolLimit, formatUsd, isMax, isMin, truncateNumber } from '@src/u
 import { Data } from 'plotly.js';
 import { getPoolItemTotalUsd, itemIsInDateRange } from '../../LiquidityPool.utils';
 import { LiquidityPoolItem } from '../../types';
+import { differenceInMilliseconds } from 'date-fns';
 
 const chartWidthPx = 1000;
 const barWidthPx = 5;
@@ -26,12 +27,12 @@ interface GenerateTracesOptions {
 }
 
 export function generateTraces({ data, filteredData, dateRange, priceRange }: GenerateTracesOptions): Data[] {
-  const diffMs = new Date(dateRange[1]).getTime() - new Date(dateRange[0]).getTime();
+  const diffMs = differenceInMilliseconds(new Date(dateRange[1]), new Date(dateRange[0]));
   const onePixel = diffMs / chartWidthPx;
   const customWidth = Math.round(barWidthPx * onePixel);
 
   const bars: Data & { base: any[] } = {
-    x: filteredData.map((x) => x.timestamp),
+    x: filteredData.map((x) => getChartDate(x.timestamp)),
     y: filteredData.map((x) =>
       isMin(x.lowerTokenRatio) || isMax(x.upperTokenRatio)
         ? priceRange[1] - priceRange[0]
@@ -57,7 +58,7 @@ export function generateTraces({ data, filteredData, dateRange, priceRange }: Ge
 
   const pricePoints = getPricePoints(data, dateRange);
   const line: Data = {
-    x: pricePoints.map((x) => x.timestamp),
+    x: pricePoints.map((x) => getChartDate(x.timestamp)),
     y: pricePoints.map((x) => x.price),
     type: 'scatter',
     name: 'Actual Price',
@@ -69,7 +70,7 @@ export function generateTraces({ data, filteredData, dateRange, priceRange }: Ge
 
   const filteredMiddlePoints = filteredData.filter((x) => !isMax(x.upperTokenRatio) && !isMin(x.lowerTokenRatio));
   var middle: Data = {
-    x: filteredMiddlePoints.map((x) => x.timestamp),
+    x: filteredMiddlePoints.map((x) => getChartDate(x.timestamp)),
     y: filteredMiddlePoints.map((x) =>
       isMin(x.lowerTokenRatio) || isMax(x.upperTokenRatio)
         ? (priceRange[1] + priceRange[0]) / 2
@@ -87,6 +88,10 @@ export function generateTraces({ data, filteredData, dateRange, priceRange }: Ge
   const traces = [bars, middle, line];
 
   return traces;
+}
+
+function getChartDate(isoDate: string){
+  return new Date(isoDate);
 }
 
 interface PricePoint {
