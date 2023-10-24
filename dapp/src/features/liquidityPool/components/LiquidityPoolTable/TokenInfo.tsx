@@ -6,8 +6,8 @@ interface TokenInfoProps {
 }
 
 export function TokenInfo({ token }: TokenInfoProps) {
-  const { amount, symbol, price } = token;
-  const usdAmount = Math.round(amount * price);
+  const { amount, symbol, priceUSD } = token;
+  const usdAmount = Math.round(amount * priceUSD);
 
   return `${truncateNumber(amount, 2)} ${symbol} (${formatUsd(usdAmount)})`;
 }

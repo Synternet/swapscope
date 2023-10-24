@@ -29,6 +29,7 @@ export function PoolSizeFilter(props: PoolSizeFilterProps) {
     <Box sx={{ width: 300 }}>
       <Typography gutterBottom>Liquidity add size</Typography>
       <Slider
+        data-testid="PoolSizeFilter"
         onChange={handleChange}
         valueLabelDisplay="auto"
         getAriaValueText={getStepValueText}

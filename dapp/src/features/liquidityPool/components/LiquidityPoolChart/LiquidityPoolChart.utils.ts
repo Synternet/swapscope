@@ -1,6 +1,6 @@
 import { formatPoolLimit, formatUsd, isMax, isMin, truncateNumber } from '@src/utils';
 import { Data } from 'plotly.js';
-import { getPoolItemTotalUsd } from '../../LiquidityPool.utils';
+import { getPoolItemTotalUsd, itemIsInDateRange } from '../../LiquidityPool.utils';
 import { LiquidityPoolItem } from '../../types';
 
 const chartWidthPx = 1000;
@@ -48,21 +48,17 @@ export function generateTraces({ data, filteredData, dateRange, priceRange }: Ge
       truncateNumber(x.pair[0].amount),
       truncateNumber(x.pair[1].amount),
       formatUsd(getPoolItemTotalUsd(x)),
-      truncateNumber(getTokenPrice(x.pair[1].price, x.pair[0].price)),
+      truncateNumber(getTokenPrice(x.pair[1].priceUSD, x.pair[0].priceUSD)),
     ]),
     marker: {
       color: filteredData.map(getBarColor),
     },
   };
 
-  const uniquePrices = data.filter((item, idx) => {
-    const index = data.findIndex((x) => x.timestamp === item.timestamp);
-    return index === idx;
-  });
-
+  const pricePoints = getPricePoints(data, dateRange);
   const line: Data = {
-    x: uniquePrices.map((x) => x.timestamp),
-    y: uniquePrices.map((x) => truncateNumber(getTokenPrice(x.pair[1].price, x.pair[0].price))),
+    x: pricePoints.map((x) => x.timestamp),
+    y: pricePoints.map((x) => x.price),
     type: 'scatter',
     name: 'Actual Price',
     hoverinfo: 'skip',
@@ -91,6 +87,35 @@ export function generateTraces({ data, filteredData, dateRange, priceRange }: Ge
   const traces = [bars, middle, line];
 
   return traces;
+}
+
+interface PricePoint {
+  timestamp: string;
+  price: string;
+}
+
+function getPricePoints(data: LiquidityPoolItem[], dateRange: [string, string]): PricePoint[] {
+  const uniqueFilteredPrices = data.filter((item, idx) => {
+    if (!itemIsInDateRange(item, dateRange)) {
+      return false;
+    }
+
+    const index = data.findIndex((x) => x.timestamp === item.timestamp);
+    return index === idx;
+  });
+
+  if (uniqueFilteredPrices.length === 0) {
+    return [];
+  }
+
+  const mapped: PricePoint[] = uniqueFilteredPrices.map((x) => ({
+    timestamp: x.timestamp,
+    price: truncateNumber(getTokenPrice(x.pair[1].priceUSD, x.pair[0].priceUSD)),
+  }));
+
+  const firstPoint: PricePoint = { timestamp: dateRange[0], price: mapped[0].price };
+  const lastPoint: PricePoint = { timestamp: dateRange[1], price: mapped[mapped.length - 1].price };
+  return [firstPoint, ...mapped, lastPoint];
 }
 
 enum LiquidityPoolItemPosition {
@@ -123,7 +148,7 @@ function getMiddlePointColor(item: LiquidityPoolItem): string {
 
 function getLiquidityPoolPosition(item: LiquidityPoolItem): LiquidityPoolItemPosition {
   const { lowerTokenRatio, upperTokenRatio, pair } = item;
-  const price = getTokenPrice(pair[1].price, pair[0].price);
+  const price = getTokenPrice(pair[1].priceUSD, pair[0].priceUSD);
 
   if (isMin(lowerTokenRatio) && isMax(upperTokenRatio)) {
     return LiquidityPoolItemPosition.neutral;
