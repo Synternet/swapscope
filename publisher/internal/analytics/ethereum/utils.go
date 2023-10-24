@@ -1,9 +1,6 @@
 package ethereum
 
 import (
-	"log"
-	"strings"
-
 	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
 	"github.com/patrickmn/go-cache"
 )
@@ -28,15 +25,8 @@ func calculatePosition(evLog EventLog, addPos Position) Position {
 
 // updateOrderOfTokens updates order of tokens in liquidity add record based on order in actual LP
 func updateOrderOfTokens(addPos Position, correctOrderToken0 repository.Token, correctOrderToken1 repository.Token) Position {
-	if strings.EqualFold(addPos.Token0.Address, correctOrderToken0.Address) { // The received token is first as it should be
-		addPos.Token1.Amount = 0.0
-		addPos.Token1.Token = correctOrderToken1
-		log.Println("First token received was correct.")
-		return addPos
-	}
-	addPos.Token1 = addPos.Token0
+	addPos.Token1.Token = correctOrderToken1
 	addPos.Token0.Token = correctOrderToken0
-	addPos.Token0.Amount = 0.0
 	return addPos
 }
 
@@ -72,17 +62,4 @@ func decodeLowerUpperTicks(position Position) Position {
 		position.LowerRatio, position.UpperRatio = position.UpperRatio, position.LowerRatio
 	}
 	return position
-}
-
-func (a *Analytics) savePool(addPos Position) {
-	if isEitherTokenAmountIsZero(addPos) || isEitherTokenUnknown(addPos) {
-		return
-	}
-	// In this case both tokens were transferred to LP and their order is correct
-	var newLiqPoll repository.Pool
-	newLiqPoll.Address = addPos.Address
-	newLiqPoll.Token0Address = addPos.Token0.Address
-	newLiqPoll.Token1Address = addPos.Token1.Address
-	a.db.SavePool(newLiqPoll)
-	return
 }
