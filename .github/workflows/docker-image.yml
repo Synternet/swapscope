@@ -2,10 +2,8 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "add-CI-for-image-builds" ]
-  pull_request:
-    branches: [ "main" ]
-
+    tags:
+      - '*' 
 
 env:
   REGISTRY: ghcr.io
@@ -36,6 +34,10 @@ jobs:
       uses: docker/metadata-action@v5
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_DAPP }}
+        # Set the list of tags for the Docker image
+        tags: |
+          type=ref,event=tag
+          type=raw,value=latest
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
@@ -69,6 +71,10 @@ jobs:
       uses: docker/metadata-action@v5
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PUBLISHER }}
+        # Set the list of tags for the Docker image
+        tags: |
+          type=ref,event=tag
+          type=raw,value=latest
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
