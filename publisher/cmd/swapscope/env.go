@@ -64,7 +64,7 @@ func setEnvDefaults(field string, value string) {
 
 func newServiceConfig() *ServiceConfig {
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+		log.Println("Could not load .env file")
 	}
 
 	setupDefaults()
