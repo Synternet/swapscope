@@ -84,3 +84,28 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [build-and-push-dapp, build-and-push-publisher]
+    steps:
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          🚀 New release available! The Docker images for this release are:
+
+          - **DApp Image**: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME_DAPP }}:${{ github.ref }}`
+          - **Publisher Image**: `${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PUBLISHER }}:${{ github.ref }}`
+
+          Pull them using the commands below:
+          ```
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_DAPP }}:${{ github.ref }}
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PUBLISHER }}:${{ github.ref }}
+          ```
+        draft: false
+        prerelease: false
