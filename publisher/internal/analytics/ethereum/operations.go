@@ -184,7 +184,6 @@ func (add Addition) Extract(mint EventLog) (Operation, error) {
 			add.handleLiquidityTransfer(mint, evLog)
 		}
 	}
-	//addPosition := &add.Position
 	addPosition := add.Position
 
 	if isEitherTokenUnknown(addPosition) {
@@ -317,8 +316,6 @@ func (op OperationBase) checkAndUpdateMissingToken(evLog EventLog, addPos Positi
 		}
 		addPos.Token1.Token = t
 	}
-
-	//addPos = updateOrderOfTokens(addPos, tokenInOrder0, tokenInOrder1)
 
 	log.Printf("Added second missing token from known pool %s", liqPoolAddress)
 	return addPos

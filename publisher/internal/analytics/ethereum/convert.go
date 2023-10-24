@@ -43,18 +43,6 @@ func convertToEventSignature(header string) string {
 	return signature
 }
 
-// convertToEventSignatures converts a slice ofstrings (event headers) into a map of event signatures.
-// Used only to generate a list of events to "avoid" - to consider "Transfer" events accordingly.
-// All "Transfer" events before any of "avoid" events are no more considered for "Mint" event.
-func convertToEventSignatures(eventHeaders []string) map[string]struct{} {
-	hexValues := make(map[string]struct{})
-	for _, eventHeaderString := range eventHeaders {
-		hexValue := convertToEventSignature(eventHeaderString)
-		hexValues[hexValue] = struct{}{}
-	}
-	return hexValues
-}
-
 // convertTicksToRatios converts ticks received from "Mint" event to understandable token ratios.
 // More info: http://atiselsts.github.io/pdfs/uniswap-v3-liquidity-math.pdf
 func convertTicksToRatios(position Position) (float64, float64, bool) {

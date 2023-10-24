@@ -1,7 +1,6 @@
 package ethereum
 
 import (
-	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
 	"github.com/patrickmn/go-cache"
 )
 
@@ -20,13 +19,6 @@ func calculatePosition(evLog EventLog, addPos Position) Position {
 
 	addPos.TotalValue = addPos.Token1.Price*addPos.Token1.Amount + addPos.Token0.Price*addPos.Token0.Amount
 
-	return addPos
-}
-
-// updateOrderOfTokens updates order of tokens in liquidity add record based on order in actual LP
-func updateOrderOfTokens(addPos Position, correctOrderToken0 repository.Token, correctOrderToken1 repository.Token) Position {
-	addPos.Token1.Token = correctOrderToken1
-	addPos.Token0.Token = correctOrderToken0
 	return addPos
 }
 
