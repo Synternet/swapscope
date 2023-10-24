@@ -7,9 +7,6 @@ import (
 func calculatePosition(evLog EventLog, addPos Position) Position {
 	addPos.LowerTick = int(convertHexToBigInt(evLog.Topics[2]).Int64())
 	addPos.UpperTick = int(convertHexToBigInt(evLog.Topics[3]).Int64())
-	addPos.Address = evLog.Address
-	addPos.TxHash = evLog.TransactionHash
-	//a.savePool(addPos)
 
 	addPos = decodeLowerUpperTicks(addPos) // Decoding / expanding "Mint" event
 

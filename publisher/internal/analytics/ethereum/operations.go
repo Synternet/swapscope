@@ -139,8 +139,8 @@ func (p Position) CanPublish() bool {
 	return true
 }
 
-func (rem Removal) Extract(eLog EventLog) (Operation, error) {
-	liqPool := eLog.Address
+func (rem Removal) Extract(burn EventLog) (Operation, error) {
+	liqPool := burn.Address
 	addr0, addr1, found := rem.db.GetPoolPairAddresses(liqPool)
 	if !found {
 		return Removal{}, fmt.Errorf("SKIP - liq. pool is unknown (removal). pool address: %s", liqPool)
@@ -151,12 +151,14 @@ func (rem Removal) Extract(eLog EventLog) (Operation, error) {
 		return Removal{}, fmt.Errorf("SKIP - at least one token is unknown in liquidity removal. pool address: %s", liqPool)
 	}
 
-	_, token0HexAmount, token1HexAmount, err := splitBurnDatatoHexStrings(eLog.Data)
+	_, token0HexAmount, token1HexAmount, err := splitBurnDatatoHexStrings(burn.Data)
 	if err != nil {
 		return Removal{}, err
 	}
 
 	remPosition := Position{
+		Address: burn.Address,
+		TxHash:  burn.TransactionHash,
 		Token0: TokenTransaction{
 			Token:  token0,
 			Amount: convertTransferAmount(token0HexAmount, token0.Decimals),
@@ -167,7 +169,7 @@ func (rem Removal) Extract(eLog EventLog) (Operation, error) {
 		},
 	}
 	remPosition = rem.includeTokenPrices(remPosition)  // 6) Getting token prices
-	remPosition = calculatePosition(eLog, remPosition) // 7) Save Liquidity Entry and Liquidity Pool
+	remPosition = calculatePosition(burn, remPosition) // 7) Save Liquidity Entry and Liquidity Pool
 	rem.Position = remPosition
 	return rem, nil
 }
@@ -178,19 +180,22 @@ func (add Addition) Extract(mint EventLog) (Operation, error) {
 	}
 
 	txEventsFromCache, _ := add.cache.Get(mint.TransactionHash)
+	addPosition := Position{
+		Address: mint.Address,
+		TxHash:  mint.TransactionHash,
+	}
 
 	for _, evLog := range txEventsFromCache.([]EventLog) { // Go through all events of this transaction
 		if isTransferEvent(evLog) && !isUniswapPositionsNFT(evLog.Address) {
-			add.handleLiquidityTransfer(mint, evLog)
+			addPosition = add.handleLiquidityTransfer(mint, evLog, addPosition)
 		}
 	}
-	addPosition := add.Position
 
 	if isEitherTokenUnknown(addPosition) {
 		addPosition = add.checkAndUpdateMissingToken(mint, addPosition) // 5) Adding missing token if only 1 token transfer was made
 	}
-
 	add.savePool(addPosition)
+
 	addPosition = add.includeTokenPrices(addPosition)  // 6) Getting token prices
 	addPosition = calculatePosition(mint, addPosition) // 7) Save Liquidity Entry and Liquidity Pool
 	add.Position = addPosition
@@ -324,37 +329,41 @@ func (op OperationBase) checkAndUpdateMissingToken(evLog EventLog, addPos Positi
 // handleLiquidityTransfer decodes Transfer event.
 // Getting token that was transferred and calculating amount transferred.
 // Keeping track of tokens involved in current Liq. Add. event.
-func (add *Addition) handleLiquidityTransfer(mint EventLog, transfer EventLog) {
+func (add Addition) handleLiquidityTransfer(mint EventLog, transfer EventLog, addPos Position) Position {
 	_, token0HexAmount, token1HexAmount, err := splitMintDatatoHexFields(mint.Data)
 	if err != nil {
 		log.Println("Could not split mint event into Amount fields: ", err.Error())
-		return
+		return addPos
 	}
 
 	t, err := add.getToken(transfer.Address)
 	if err != nil {
 		log.Println("Failed fetching token information: ", err.Error())
-		return
+		return addPos
 	}
 
 	if transfer.Data == token0HexAmount {
-		add.Token0.Token = t
-		add.Token0.Amount = convertTransferAmount(token0HexAmount, t.Decimals)
+		addPos.Token0.Token = t
+		addPos.Token0.Amount = convertTransferAmount(token0HexAmount, t.Decimals)
 	}
 
 	if transfer.Data == token1HexAmount {
-		add.Token1.Token = t
-		add.Token1.Amount = convertTransferAmount(token1HexAmount, t.Decimals)
+		addPos.Token1.Token = t
+		addPos.Token1.Amount = convertTransferAmount(token1HexAmount, t.Decimals)
 	}
+	return addPos
 }
 
 func (op OperationBase) includeTokenPrices(pos Position) Position {
 	// Place here to implement price cache?
-	price, err := op.getPrice(pos.Token0.Address)
-	if err != nil {
-		log.Println("failed to feetch Token0 price: ", err.Error())
+	if !strings.EqualFold(pos.Token0.Address, "") {
+		price, err := op.getPrice(pos.Token0.Address)
+		if err != nil {
+			log.Println("failed to feetch Token0 price: ", err.Error())
+		}
+		pos.Token0.Price = price.Value
 	}
-	pos.Token0.Price = price.Value
+
 	if !strings.EqualFold(pos.Token1.Address, "") {
 		price, err := op.getPrice(pos.Token1.Address)
 		if err != nil {
