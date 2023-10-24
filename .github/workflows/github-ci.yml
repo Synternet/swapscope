@@ -44,6 +44,7 @@ jobs:
       with:
         context: ./dapp
         file: ./dapp/docker/Dockerfile
+        build-args: NEXT_PUBLIC_ENV=${{ env.NEXT_PUBLIC_ENV }},NEXT_PUBLIC_NATS_URL=${{ env.NEXT_PUBLIC_NATS_URL }},NEXT_PUBLIC_ACCESS_TOKEN=${{ NEXT_PUBLIC_ACCESS_TOKEN }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
