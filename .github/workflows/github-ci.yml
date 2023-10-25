@@ -101,15 +101,13 @@ jobs:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
         body: |
-          🚀 New release available! The Docker images for this release are:
-
-          - **DApp Image**: `ghcr.io/syntropynet/${{ env.IMAGE_NAME_DAPP }}:${{ github.ref_name }}`
-          - **Publisher Image**: `ghcr.io/syntropynet/${{ env.IMAGE_NAME_PUBLISHER }}:${{ github.ref_name }}`
-
-          Pull them using the commands below:
+          Pull Docker image for this release using the commands below:
           ```
           docker pull ghcr.io/syntropynet/${{ env.IMAGE_NAME_DAPP }}:${{ github.ref_name }}
+          ```
+          ```
           docker pull ghcr.io/syntropynet/${{ env.IMAGE_NAME_PUBLISHER }}:${{ github.ref_name }}
           ```
         draft: false
         prerelease: false
+    
