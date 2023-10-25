@@ -43,18 +43,6 @@ func convertToEventSignature(header string) string {
 	return signature
 }
 
-// convertToEventSignatures converts a slice ofstrings (event headers) into a map of event signatures.
-// Used only to generate a list of events to "avoid" - to consider "Transfer" events accordingly.
-// All "Transfer" events before any of "avoid" events are no more considered for "Mint" event.
-func convertToEventSignatures(eventHeaders []string) map[string]struct{} {
-	hexValues := make(map[string]struct{})
-	for _, eventHeaderString := range eventHeaders {
-		hexValue := convertToEventSignature(eventHeaderString)
-		hexValues[hexValue] = struct{}{}
-	}
-	return hexValues
-}
-
 // convertTicksToRatios converts ticks received from "Mint" event to understandable token ratios.
 // More info: http://atiselsts.github.io/pdfs/uniswap-v3-liquidity-math.pdf
 func convertTicksToRatios(position Position) (float64, float64, bool) {
@@ -93,7 +81,7 @@ func convertTransferAmount(amountHex string, decimals int) float64 {
 	return amountScaled
 }
 
-func splitLogDatatoHexStrings(data string) (string, string, string, error) {
+func splitBurnDatatoHexStrings(data string) (string, string, string, error) {
 	const (
 		AmountOffset            = 2
 		AmountToken0Size        = 64
@@ -107,6 +95,27 @@ func splitLogDatatoHexStrings(data string) (string, string, string, error) {
 	amountHex := "0x" + data[AmountOffset:AmountOffset+AmountToken0Size]
 	amountToken0Hex := "0x" + data[AmountOffset+AmountToken0Size:AmountOffset+AmountToken0Size+AmountToken0Size]
 	amountToken1Hex := "0x" + data[AmountOffset+AmountToken0Size+AmountToken1Size:]
+
+	return amountHex, amountToken0Hex, amountToken1Hex, nil
+}
+
+func splitMintDatatoHexFields(data string) (string, string, string, error) {
+	const (
+		AmountOffset            = 2
+		AmountOwnerAddress      = 64
+		AmountSize              = 64
+		AmountToken0Size        = 64
+		AmountToken1Size        = 64
+		RequiredDataFieldLength = 258
+		AmountSkip              = AmountOffset + AmountOwnerAddress
+	)
+
+	if len(data) != RequiredDataFieldLength {
+		return "", "", "", fmt.Errorf("the data field length is not of expected size, could not parse amount fields.")
+	}
+	amountHex := "0x" + data[AmountSkip:AmountSkip+AmountSize]
+	amountToken0Hex := "0x" + data[AmountSkip+AmountSize:AmountSkip+AmountSize+AmountToken0Size]
+	amountToken1Hex := "0x" + data[AmountSkip+AmountSize+AmountToken0Size:]
 
 	return amountHex, amountToken0Hex, amountToken1Hex, nil
 }

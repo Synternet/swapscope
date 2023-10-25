@@ -9,24 +9,10 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-var eventsToAvoid = []string{
-	"Swap(address,address,int256,int256,uint160,uint128,int24)",
-	"Swap(address,uint256,uint256,uint256,uint256,address)",
-	"Swap(address,address,uint256,uint256)",
-	"Collect(address,address,int24,int24,uint128,uint128)",
-	"Collect(uint256,address,uint256,uint256)",
-	"AssetWithdrawn(address,address,uint256)",
-	"Burn(address,uint256,uint256,address)",
-	"AdaptorCalled(address,bytes)",
-	"Mint(address,address,int24,int24,uint128,uint256,uint256)",
-	"TransformedERC20(address,address,address,uint256,uint256)",
-}
-
 var (
-	signaturesToAvoid map[string]struct{}
-	mintSig           string
-	transferSig       string
-	burnSig           string
+	mintSig     string
+	transferSig string
+	burnSig     string
 )
 
 const (
@@ -46,7 +32,6 @@ type Analytics struct {
 }
 
 func init() {
-	signaturesToAvoid = convertToEventSignatures(eventsToAvoid)
 	mintSig = convertToEventSignature(mintEventHeader)
 	transferSig = convertToEventSignature(transferEventHeader)
 	burnSig = convertToEventSignature(burnEventHeader)

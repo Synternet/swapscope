@@ -13,16 +13,6 @@ func isUniswapPositionsNFT(address string) bool {
 	return false
 }
 
-func isAvoidEvent(evLog EventLog) bool {
-	topic0 := evLog.Topics[0]
-	_, found := signaturesToAvoid[topic0[:10]]
-	if found {
-		log.Println("FOUND EVENT TO AVOID! (all transfers until now are invalid):", topic0[:10])
-		return true
-	}
-	return false
-}
-
 func isTransferEvent(evLog EventLog) bool {
 	return strings.HasPrefix(evLog.Topics[0], transferSig)
 }
