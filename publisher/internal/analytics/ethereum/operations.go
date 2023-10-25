@@ -194,7 +194,10 @@ func (add Addition) Extract(mint EventLog) (Operation, error) {
 	if isEitherTokenUnknown(addPosition) {
 		addPosition = add.checkAndUpdateMissingToken(mint, addPosition) // 5) Adding missing token if only 1 token transfer was made
 	}
-	add.savePool(addPosition)
+	err := add.savePool(addPosition)
+	if err != nil {
+		log.Println("error while adding new pool to database:", err.Error())
+	}
 
 	addPosition = add.includeTokenPrices(addPosition)  // 6) Getting token prices
 	addPosition = calculatePosition(mint, addPosition) // 7) Save Liquidity Entry and Liquidity Pool
@@ -203,17 +206,16 @@ func (add Addition) Extract(mint EventLog) (Operation, error) {
 	return add, nil
 }
 
-func (add Addition) savePool(addPos Position) {
+func (add Addition) savePool(addPos Position) error {
 	if isEitherTokenAmountIsZero(addPos) || isEitherTokenUnknown(addPos) {
-		return
+		return nil
 	}
 	// In this case both tokens were transferred to LP and their order is correct
 	var newLiqPoll repository.Pool
 	newLiqPoll.Address = addPos.Address
 	newLiqPoll.Token0Address = addPos.Token0.Address
 	newLiqPoll.Token1Address = addPos.Token1.Address
-	add.db.SavePool(newLiqPoll)
-	return
+	return add.db.SavePool(newLiqPoll)
 }
 
 func (rem Removal) String() string {
@@ -305,7 +307,7 @@ func (op OperationBase) checkAndUpdateMissingToken(evLog EventLog, addPos Positi
 	}
 
 	if addPos.Token0.Token == (repository.Token{}) {
-		t, err := op.getToken(tok0Address)
+		t, err := op.lookupToken(tok0Address)
 		if err != nil {
 			log.Println("Failed fetching token information: ", err.Error())
 			return addPos
@@ -314,7 +316,7 @@ func (op OperationBase) checkAndUpdateMissingToken(evLog EventLog, addPos Positi
 	}
 
 	if addPos.Token1.Token == (repository.Token{}) {
-		t, err := op.getToken(tok1Address)
+		t, err := op.lookupToken(tok1Address)
 		if err != nil {
 			log.Println("Failed fetching token information: ", err.Error())
 			return addPos
@@ -336,7 +338,7 @@ func (add Addition) handleLiquidityTransfer(mint EventLog, transfer EventLog, ad
 		return addPos
 	}
 
-	t, err := add.getToken(transfer.Address)
+	t, err := add.lookupToken(transfer.Address)
 	if err != nil {
 		log.Println("Failed fetching token information: ", err.Error())
 		return addPos
@@ -357,7 +359,7 @@ func (add Addition) handleLiquidityTransfer(mint EventLog, transfer EventLog, ad
 func (op OperationBase) includeTokenPrices(pos Position) Position {
 	// Place here to implement price cache?
 	if !strings.EqualFold(pos.Token0.Address, "") {
-		price, err := op.getPrice(pos.Token0.Address)
+		price, err := op.lookupPrice(pos.Token0.Address)
 		if err != nil {
 			log.Println("failed to feetch Token0 price: ", err.Error())
 		}
@@ -365,7 +367,7 @@ func (op OperationBase) includeTokenPrices(pos Position) Position {
 	}
 
 	if !strings.EqualFold(pos.Token1.Address, "") {
-		price, err := op.getPrice(pos.Token1.Address)
+		price, err := op.lookupPrice(pos.Token1.Address)
 		if err != nil {
 			log.Println("failed to feetch Token1 price: ", err.Error())
 		}
@@ -374,10 +376,10 @@ func (op OperationBase) includeTokenPrices(pos Position) Position {
 	return pos
 }
 
-func (op OperationBase) getToken(address string) (repository.Token, error) {
+func (op OperationBase) lookupToken(address string) (repository.Token, error) {
 	return op.fetchers.tokenFetcher.Token(address)
 }
 
-func (op OperationBase) getPrice(address string) (repository.TokenPrice, error) {
+func (op OperationBase) lookupPrice(address string) (repository.TokenPrice, error) {
 	return op.fetchers.priceFetcher.Price(address)
 }
