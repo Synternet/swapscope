@@ -29,4 +29,4 @@ RUN apk add --update --no-cache \
 WORKDIR /home/app
 COPY --from=build /home/src/dist/swapscope .
 
-CMD ["sh", "-c", "./swapscope --nats ${NATS_HOSTS} --nats-jwt ${NATS_JWT} --nats-nkey ${NATS_NKEY} --pub-subject-prefix ${PUB_SUBJECT_PREFIX}"]
+CMD ["sh", "-c", "./swapscope --nats ${NATS_URL} --nats-sub-jwt ${NATS_SUB_JWT} --nats-sub-nkey ${NATS_SUB_NKEY}"]
