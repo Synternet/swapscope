@@ -41,8 +41,8 @@ make build
 | api-timeout          | API_FETCH_TIMEOUT       | (N**) API fetch timeout                                                   | 2m                               |
 | api-ratelimit        | API_RATE_LIMIT          | (N**) Conservative API Rate Limit (e.g. 10-30 calls per minute)           | 12                               |
 
-*If `nats-sub-creds` (nats creds file location) is set, then `nats-sub-jwt` and `nats-sub-nkey` are not required. Otherwise `nats-sub-jwt` and `nats-sub-nkey` can be set and `nats-sub-creds` has to be empty. The same applies to `nats-pub-*`.</br>
-**Default value is set by the app in `env.go`. For Cache timings if set to 0 - cache elements will never expire.
+\* If `nats-sub-creds` (nats creds file location) is set, then `nats-sub-jwt` and `nats-sub-nkey` are not required. Otherwise `nats-sub-jwt` and `nats-sub-nkey` can be set and `nats-sub-creds` has to be empty. The same applies to `nats-pub-*`.</br>
+\** Default value is set by the app in `env.go`. For Cache timings if set to 0 - cache elements will never expire.
 </br>
 
 3. Run with golang (with flags if any).
