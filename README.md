@@ -17,14 +17,28 @@ Before you start using (modifying) Swapscope locally, there are some prerequisit
 * Access to Coingecko API (for token and pricing information (for now)) - [Coingecko API](https://www.coingecko.com/en/api)
 * Local (Docker) PostgreSQL database for storing token and liquidity pool information (helps to reduce API calls significantly) + publisher has built-in functionality to save liquidity addition/removal operations into a database
 
-### Usage
+### Usage (individual)
 * Latest release images can be found here: https://github.com/SyntropyNet/swapscope/releases/latest
 * DApp instructions: [DApp README.md](dapp/README.md)
 * Publisher instructions: [Publisher README.md](publisher/README.md)
 
-### Installation
-<span style="color:red"> *TODO: is there a command to run DApp and publisher at the same time?*</span>
+### QuickStart (Docker compose)
 
+❗❗❗ As of 2023-10-26 DApp .env file has to be expanded with `NEXT_PUBLIC_ENV` variable and value `"development"`.
+
+1. Build.
+```
+docker-compose build
+```
+
+2. Start.
+```
+docker-compose up
+```
+&emsp;&emsp;or
+```
+docker-compose start
+```
 
 ## Future development
 As this is a young project, there still is a lot of room to improve! Some key features that are planned for the future:

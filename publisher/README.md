@@ -63,15 +63,3 @@ docker run -it --rm --env-file=.env swapscope
 ```
 *Local database will not work with Docker</br>
 *JWT creds files have to be copied into Docker container (better to set `NATS_SUB_JWT`, `NATS_SUB_NKEY`, `NATS_PUB_JWT`, `NATS_PUB_NKEY`)
-
-## Docker compose
-
-1. Build.
-```
-docker-compose build
-```
-
-2. Start.
-```
-docker-compose start
-```
