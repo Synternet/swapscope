@@ -11,10 +11,11 @@ SwapScope publisher consumes Syntropy Data Layer's Ethereum event log stream. Li
 ```
 make build
 ```
-</br>
+2. Set variables.
 
-2. Set variables.</br>
-* Using .env file. See [.example.env](https://github.com/SyntropyNet/swapscope/blob/main/publisher/.example.env) (works if running locally)</br>
+* Using .env file. See [.example.env](https://github.com/SyntropyNet/swapscope/blob/main/publisher/.example.env) (works if running locally)
+
+
 * OR Using flags or environment variables:
 
 | Flag                 | Environment Variables   | (Mandatory?) Description                                                  | Default value                    |
@@ -41,9 +42,9 @@ make build
 | api-timeout          | API_FETCH_TIMEOUT       | (N[^2]) API fetch timeout                                                   | 2m                               |
 | api-ratelimit        | API_RATE_LIMIT          | (N[^2]) Conservative API Rate Limit (e.g. 10-30 calls per minute)           | 12                               |
 
-[^1]: If `nats-sub-creds` (nats creds file location) is set, then `nats-sub-jwt` and `nats-sub-nkey` are not required. Otherwise `nats-sub-jwt` and `nats-sub-nkey` can be set and `nats-sub-creds` has to be empty. The same applies to `nats-pub-*`.</br>
+[^1]: If `nats-sub-creds` (nats creds file location) is set, then `nats-sub-jwt` and `nats-sub-nkey` are not required. Otherwise `nats-sub-jwt` and `nats-sub-nkey` can be set and `nats-sub-creds` has to be empty. The same applies to `nats-pub-*`.
+
 [^2]: Default value is set by the app in `env.go`. For Cache timings if set to 0 - cache elements will never expire.
-</br>
 
 3. Run with golang (with flags if any).
 ```
