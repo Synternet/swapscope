@@ -25,7 +25,7 @@ services:
       - .env
     environment:
       DB_HOST: postgres
-      DB_PORT: 7432
+      DB_PORT: 5432
       DB_USER: swapscope_user
       DB_PASSWORD: swapscope123
       DB_NAME: swapscope_db
