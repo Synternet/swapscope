@@ -1,0 +1,32 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_USER: swapscope_user
+      POSTGRES_PASSWORD: swapscope123
+      POSTGRES_DB: swapscope_db
+    ports:
+      - "7432:5432"
+
+  dapp:
+    build:
+      context: ./dapp
+      dockerfile: docker/Dockerfile
+
+  publisher:
+    build:
+      context: ./publisher
+      dockerfile: docker/Dockerfile
+    restart: allways
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: swapscope_user
+      DB_PASSWORD: swapscope123
+      DB_NAME: swapscope_db
