@@ -1,4 +1,7 @@
 # SwapScope publisher
+![GitHub go.mod Go version (branch & subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/SyntropyNet/swapscope/main?filename=publisher%2Fgo.mod)
+![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 
 SwapScope publisher consumes Syntropy Data Layer's Ethereum event log stream. Liquidity addition (mint) and removal (burn) events are detected, decoded and expanded with additional information about involved tokens. Token information (symbol, decimals, prices) are received through CoinGecko API.
  
@@ -63,3 +66,15 @@ docker build -f ./docker/Dockerfile -t swapscope .
 docker run -it --rm --env-file=.env swapscope
 ```
 *Local database will not work with Docker
+
+## Docker compose
+
+1. Build.
+```
+docker-compose build
+```
+
+2. Start.
+```
+docker-compose start
+```
