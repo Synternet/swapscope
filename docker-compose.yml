@@ -13,14 +13,14 @@ services:
   dapp:
     build:
       context: ./dapp
-      dockerfile: ./dapp/docker/Dockerfile
+      dockerfile: docker/Dockerfile
     env_file:
       - ./dapp/.env
 
   publisher:
     build:
       context: ./publisher
-      dockerfile: ./publisher/docker/Dockerfile
+      dockerfile: docker/Dockerfile
     depends_on:
       - postgres
     env_file:
