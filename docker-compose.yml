@@ -19,6 +19,7 @@ services:
     build:
       context: ./publisher
       dockerfile: docker/Dockerfile
+    restart: allways
     depends_on:
       - postgres
     env_file:
