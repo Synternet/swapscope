@@ -46,5 +46,5 @@ If you have any questions, ideas, or simply want to connect with us, we encourag
 - **Telegram**: Connect with us on Telegram at [https://t.me/SyntropyNet](https://t.me/SyntropyNet). Stay updated with the latest news, announcements, and interact with our team members and community.
 - **Email**: If you prefer email communication, feel free to reach out to us at devrel@syntropynet.com. We're here to address your inquiries, provide support, and explore collaboration opportunities.
 
-## TODO: ANYTHING ABOUT LICENSE?
-<span style="color:red"> *TODO: ANYTHING ABOUT LICENSE?*</span>
+## License
+This project is licensed under the terms of the MIT license.
