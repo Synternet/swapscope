@@ -14,39 +14,35 @@ make build
 </br>
 
 2. Set variables.</br>
-* Using .env file. See [.example.env](https://github.com/SyntropyNet/swapscope/blob/main/publisher/.example.env)</br>
-* OR Using flags:
-<details>
-<summary>
-Table of available flags
-</summary>
+* Using .env file. See [.example.env](https://github.com/SyntropyNet/swapscope/blob/main/publisher/.example.env) (works if running locally)</br>
+* OR Using flags or env. variables:
 
-| Flag                   | Description                                                        |Default value                     |
-| ---------------------- | ------------------------------------------------------------------ |--------------------------------- |
-| nats                   | NATS servers URL                                                   | -                                |
-| nats-sub-creds         | NATS Subscriber Credentials File path (combined JWT and NKey file) | -                                |
-| nats-sub-jwt           | NATS Subscriber Credentials JWT string                             | -                                |
-| nats-sub-nkey          | NATS Subscriber Credentials NKey string                            | -                                |
-| pub-subject-prefix     | Subject prefix                                                     | syntropy.analytics               |
-| nats-pub-creds         | NATS Publisher Credentials File path (combined JWT and NKey file)  | -                                |
-| nats-pub-jwt           | NATS Publisher Credentials JWT string                              | -                                |
-| nats-pub-nkey          | NATS Publisher Credentials NKey string                             | -                                |
-| eth-node-address       | Ethereum Full Node address                                         | -                                |
-| db-host                | Database host string                                               | -                                |
-| db-port                | Database port                                                      | -                                |
-| db-user                | Database User Name                                                 | -                                |
-| db-passw               | Database Password                                                  | -                                |
-| db-name                | Database Name                                                      | -                                |
-| cache-logs-expire      | Log Cache Record Expiration Time                                   | 2m                               |
-| cache-logs-purge       | Log Cache Record Purge Time                                        | 3m                               |
-| cache-prices-expire    | Token Price Cache Record Expiration Time                           | 2m                               |
-| cache-prices-purge     | Token Price Cache Record Purge Time                                | 3m                               |
-| coingecko-api          | CoinGecko API url                                                  | https://api.coingecko.com/api/v3 |
-| api-timeout            | API fetch timeout                                                  | 2m                               |
-| api-ratelimit          | Conservative API Rate Limit(e.g. 10-30 calls per minute)           | 12                               |
-</details>
+| Flag                 |ENV_VAR                  | (Mandatory?) Description                                                  | Default value                    |
+| -------------------- | ----------------------- | ------------------------------------------------------------------------- |--------------------------------- |
+| nats                 | NATS_URL                | (Y) NATS servers URL                                                      | -                                |
+| nats-sub-creds       | NATS_SUB_CREDS_FILE     | (Y/N*) NATS Subscriber Credentials File path (combined JWT and NKey file) | -                                |
+| nats-sub-jwt         | NATS_SUB_JWT            | (Y/N*) NATS Subscriber Credentials JWT string                             | -                                |
+| nats-sub-nkey        | NATS_SUB_NKEY           | (Y/N*) NATS Subscriber Credentials NKey string                            | -                                |
+| pub-subject-prefix   | SUBJECT_PREFIX          | (Y**) Subject prefix                                                      | syntropy.analytics               |
+| nats-pub-creds       | NATS_PUB_CREDS_FILE     | (Y/N*) NATS Publisher Credentials File path (combined JWT and NKey file)  | -                                |
+| nats-pub-jwt         | NATS_PUB_JWT            | (Y/N*) NATS Publisher Credentials JWT string                              | -                                |
+| nats-pub-nkey        | NATS_PUB_NKEY           | (Y/N*) NATS Publisher Credentials NKey string                             | -                                |
+| eth-node-address     | ETH_NODE                | (N) Ethereum Full Node address                                            | -                                |
+| db-host              | DB_HOST                 | (Y) Database host string                                                  | -                                |
+| db-port              | DB_PORT                 | (Y) Database port                                                         | -                                |
+| db-user              | DB_USER                 | (Y) Database User Name                                                    | -                                |
+| db-passw             | DB_PASSWORD             | (Y) Database Password                                                     | -                                |
+| db-name              | DB_NAME                 | (Y) Database Name                                                         | -                                |
+| cache-logs-expire    | LOG_CACHE_EXPIRY_TIME   | (N**) Log Cache Record Expiration Time                                    | 2m                               |
+| cache-logs-purge     | LOG_CACHE_PURGE_TIME    | (N**) Log Cache Record Purge Time                                         | 3m                               |
+| cache-prices-expire  | PRICE_CACHE_EXPIRY_TIME | (N**) Token Price Cache Record Expiration Time                            | 2m                               |
+| cache-prices-purge   | PRICE_CACHE_PURGE_TIME  | (N**) Token Price Cache Record Purge Time                                 | 3m                               |
+| coingecko-api        | COINGECKO_API_URL       | (N**) CoinGecko API url                                                   | https://api.coingecko.com/api/v3 |
+| api-timeout          | API_FETCH_TIMEOUT       | (N**) API fetch timeout                                                   | 2m                               |
+| api-ratelimit        | API_RATE_LIMIT          | (N**) Conservative API Rate Limit(e.g. 10-30 calls per minute)            | 12                               |
 
-*If `nats-sub-creds` (nats creds file location) is set, then `nats-sub-jwt` and `nats-sub-nkey` are not required. Otherwise `nats-sub-jwt` and `nats-sub-nkey` can be set and `nats-sub-creds` has to be empty. The same applies to `nats-pub-*`.
+*If `nats-sub-creds` (nats creds file location) is set, then `nats-sub-jwt` and `nats-sub-nkey` are not required. Otherwise `nats-sub-jwt` and `nats-sub-nkey` can be set and `nats-sub-creds` has to be empty. The same applies to `nats-pub-*`.</br>
+**Default value is set by the app in `env.go`. For Cache timings if set to 0 - cache elements will never expire.
 </br>
 
 3. Run with golang (with flags if any).
@@ -65,7 +61,8 @@ docker build -f ./docker/Dockerfile -t swapscope .
 ```
 docker run -it --rm --env-file=.env swapscope
 ```
-*Local database will not work with Docker
+*Local database will not work with Docker</br>
+*JWT creds files have to be copied into Docker container (better to set `NATS_SUB_JWT`, `NATS_SUB_NKEY`, `NATS_PUB_JWT`, `NATS_PUB_NKEY`)
 
 ## Docker compose
 
