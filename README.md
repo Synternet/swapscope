@@ -24,7 +24,9 @@ Before you start using (modifying) Swapscope locally, there are some prerequisit
 
 ### QuickStart (Docker compose)
 
-❗❗❗ As of 2023-10-26 DApp .env file has to be expanded with `NEXT_PUBLIC_ENV` variable and value `"development"`.
+❗ Requires dapp/.env
+❗ As of 2023-10-26 dapp/.env file has to be expanded with `NEXT_PUBLIC_ENV` variable and value `"development"`.
+❗ Requires publisher .env file in the root directory
 
 1. Build.
 ```
