@@ -15,9 +15,9 @@ make build
 
 2. Set variables.</br>
 * Using .env file. See [.example.env](https://github.com/SyntropyNet/swapscope/blob/main/publisher/.example.env) (works if running locally)</br>
-* OR Using flags or env. variables:
+* OR Using flags or environment variables:
 
-| Flag                 |ENV_VAR                  | (Mandatory?) Description                                                  | Default value                    |
+| Flag                 | Environment Variables   | (Mandatory?) Description                                                  | Default value                    |
 | -------------------- | ----------------------- | ------------------------------------------------------------------------- |--------------------------------- |
 | nats                 | NATS_URL                | (Y) NATS servers URL                                                      | -                                |
 | nats-sub-creds       | NATS_SUB_CREDS_FILE     | (Y/N*) NATS Subscriber Credentials File path (combined JWT and NKey file) | -                                |
@@ -39,7 +39,7 @@ make build
 | cache-prices-purge   | PRICE_CACHE_PURGE_TIME  | (N**) Token Price Cache Record Purge Time                                 | 3m                               |
 | coingecko-api        | COINGECKO_API_URL       | (N**) CoinGecko API url                                                   | https://api.coingecko.com/api/v3 |
 | api-timeout          | API_FETCH_TIMEOUT       | (N**) API fetch timeout                                                   | 2m                               |
-| api-ratelimit        | API_RATE_LIMIT          | (N**) Conservative API Rate Limit(e.g. 10-30 calls per minute)            | 12                               |
+| api-ratelimit        | API_RATE_LIMIT          | (N**) Conservative API Rate Limit (e.g. 10-30 calls per minute)           | 12                               |
 
 *If `nats-sub-creds` (nats creds file location) is set, then `nats-sub-jwt` and `nats-sub-nkey` are not required. Otherwise `nats-sub-jwt` and `nats-sub-nkey` can be set and `nats-sub-creds` has to be empty. The same applies to `nats-pub-*`.</br>
 **Default value is set by the app in `env.go`. For Cache timings if set to 0 - cache elements will never expire.
@@ -57,9 +57,7 @@ go run ./cmd/swapscope [flags]
 docker build -f ./docker/Dockerfile -t swapscope .
 ```
 
-2. Run container with passed environment variables.
+2. Run container.
 ```
 docker run -it --rm --env-file=.env swapscope
 ```
-*Local database will not work with Docker</br>
-*JWT creds files have to be copied into Docker container (better to set `NATS_SUB_JWT`, `NATS_SUB_NKEY`, `NATS_PUB_JWT`, `NATS_PUB_NKEY`)
