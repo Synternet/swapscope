@@ -29,15 +29,4 @@ RUN apk add --update --no-cache \
 WORKDIR /home/app
 COPY --from=build /home/src/dist/swapscope .
 
-# Required ENV vars to be set at runtime:
-# - NATS_URL - NATS url
-# - NATS_PUB_JWT - NATS JWT
-# - NATS_PUB_NKEY - NATS NKEY
-# - ETH_NODE - ETH node url
-# - DB_HOST - DB host
-# - DB_PORT - DB port
-# - DB_USER - DB user
-# - DB_PASSWORD - DB password
-# - DB_NAME - DB name
-
 CMD ["sh", "-c", "./swapscope"]
