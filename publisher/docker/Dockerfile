@@ -2,7 +2,7 @@
 # 1. Build Container
 #
 FROM golang:1.20 AS build
-ARG VERSION CI_JOB_TOKEN CI_SERVER_HOST NATS_HOSTS NATS_CREDS NATS_JWT NATS_NKEY PUB_SUBJECT_PREFIX
+ARG VERSION CI_JOB_TOKEN CI_SERVER_HOST NATS_HOSTS NATS_CREDS NATS_PUB_JWT NATS_PUB_NKEY PUB_SUBJECT_PREFIX
 
 COPY . /home/src
 WORKDIR /home/src
@@ -29,4 +29,15 @@ RUN apk add --update --no-cache \
 WORKDIR /home/app
 COPY --from=build /home/src/dist/swapscope .
 
-CMD ["sh", "-c", "./swapscope --nats ${NATS_HOSTS} --nats-jwt ${NATS_JWT} --nats-nkey ${NATS_NKEY} --pub-subject-prefix ${PUB_SUBJECT_PREFIX}"]
+# Required ENV vars to be set at runtime:
+# - NATS_URL - NATS url
+# - NATS_PUB_JWT - NATS JWT
+# - NATS_PUB_NKEY - NATS NKEY
+# - ETH_NODE - ETH node url
+# - DB_HOST - DB host
+# - DB_PORT - DB port
+# - DB_USER - DB user
+# - DB_PASSWORD - DB password
+# - DB_NAME - DB name
+
+CMD ["sh", "-c", "./swapscope"]
