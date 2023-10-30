@@ -43,28 +43,10 @@ func convertToEventSignature(header string) string {
 	return signature
 }
 
-// convertTicksToRatios converts ticks received from "Mint" event to understandable token ratios.
+// convertTickToRatio converts ticks received from "Mint" event to understandable token ratios.
 // More info: http://atiselsts.github.io/pdfs/uniswap-v3-liquidity-math.pdf
-func convertTicksToRatios(position Position) (float64, float64, bool) {
-	reverseOrder := false
-	tokDec0, tokDec1 := position.Token0.Decimals, position.Token1.Decimals
-	lowerTick, upperTick := position.LowerTick, position.UpperTick
-
-	lowerTickRatio := math.Pow(1.0001, float64(lowerTick)) / math.Pow(10, float64(tokDec1-tokDec0))
-	upperTickRatio := math.Pow(1.0001, float64(upperTick)) / math.Pow(10, float64(tokDec1-tokDec0))
-
-	if isStableOrNativeInvolved(position) && isOrderCorrect(position) {
-		lowerTickRatio = 1 / lowerTickRatio
-		upperTickRatio = 1 / upperTickRatio
-	} else if isStableOrNativeInvolved(position) {
-		reverseOrder = true
-	}
-
-	if lowerTickRatio > upperTickRatio {
-		lowerTickRatio, upperTickRatio = upperTickRatio, lowerTickRatio
-	}
-
-	return lowerTickRatio, upperTickRatio, reverseOrder
+func convertTickToRatio(tick, token0Decimal, token1Decimal int) float64 {
+	return math.Pow(1.0001, float64(tick)) / math.Pow(10, float64(token1Decimal-token0Decimal))
 }
 
 func parseEventLogMessage(data []byte) EventLog {

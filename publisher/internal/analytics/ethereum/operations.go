@@ -219,7 +219,7 @@ func (add Addition) savePool(addPos Position) error {
 }
 
 func (rem Removal) String() string {
-	format := "Removing %f of %s and %f of %s from %s between %f and %f\n"
+	format := "Removing %f of %s and %f of %s from %s between %f and %f"
 	return fmt.Sprintf(format,
 		rem.Token0.Amount,
 		rem.Token0.Symbol,
@@ -231,7 +231,7 @@ func (rem Removal) String() string {
 }
 
 func (add Addition) String() string {
-	format := "Adding %f of %s($%f) and %f of %s($%f) = $%f. To %s between %f and %f while current is %f\n"
+	format := "Adding %f of %s($%f) and %f of %s($%f) = $%f. To %s between %f and %f while current is %f"
 	return fmt.Sprintf(format,
 		add.Token0.Amount,
 		add.Token0.Symbol,
