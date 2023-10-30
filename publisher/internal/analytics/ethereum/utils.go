@@ -47,8 +47,5 @@ func decodeLowerUpperTicks(position Position) Position {
 		position.Token0, position.Token1 = position.Token1, position.Token0
 	}
 
-	if position.LowerRatio > position.UpperRatio {
-		position.LowerRatio, position.UpperRatio = position.UpperRatio, position.LowerRatio
-	}
 	return position
 }
