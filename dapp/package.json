@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node ./scripts/predev.js",
     "dev": "next dev",
     "dev:mock": "NEXT_PUBLIC_MOCK_API=true npm run dev",
     "build": "next build",
