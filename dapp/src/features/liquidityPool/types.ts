@@ -20,3 +20,8 @@ export interface LiquiditySizeFilterOptions {
   max: number;
   value: [number, number];
 }
+
+export interface TokenPair {
+  symbol1: string;
+  symbol2: string;
+}

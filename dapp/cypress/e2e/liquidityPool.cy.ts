@@ -22,6 +22,14 @@ describe('Liquidity Pool', () => {
     waitForItemsLoaded(12, 24);
     cy.matchImageSnapshot('liquidity-pool-filter-size');
   });
+
+  it('filters by token pair', () => {
+    cy.visit('/');
+    cy.getByTestId('TokenPairFilter').within(() => cy.get('button').should('have.length', 5));
+    cy.getByTestId('TokenPairFilter').within(() => cy.get('button').eq(1).click().blur());
+    waitForItemsLoaded(3, 11);
+    cy.matchImageSnapshot('liquidity-pool-filter-token-pair-link-weth');
+  });
 });
 
 function waitForItemsLoaded(tableRowCount: number, chartPointCount: number) {

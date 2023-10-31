@@ -198,6 +198,28 @@
     "id": "32.1697108805313"
   },
   {
+    "timestamp": "2023-10-10T12:39:30.1723294Z",
+    "address": "0x109830a1aaad605bbf02a9dfa7b0b92ec2fb7daa",
+    "lowerTokenRatio": 0.8734597447691387,
+    "currentTokenRatio": 0.8744444082079146,
+    "upperTokenRatio": 0.8743335976756261,
+    "totalValueUSD": 109866.85306541843,
+    "pair": [
+      {
+        "symbol": "wstETH",
+        "amount": 22.26005640251105,
+        "priceUSD": 2077.7381189202
+      },
+      {
+        "symbol": "WETH",
+        "amount": 35.01428754151118,
+        "priceUSD": 1816.8664798102
+      }
+    ],
+    "txHash": "0xac1b975c31bf2924c4b671d5408ea01accdceaee0a261799f21c0b3c5f6c39e4",
+    "id": "218.1698746010383"
+  },
+  {
     "timestamp": "2023-10-10T13:23:01.1748486Z",
     "address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
     "lowerTokenRatio": 1559.3666876181132,
@@ -308,6 +330,28 @@
     "id": "55.1697108805317"
   },
   {
+    "timestamp": "2023-10-10T14:00:11.9205699Z",
+    "address": "0x510100d5143e011db24e2aa38abe85d73d5b2177",
+    "lowerTokenRatio": 9186.990906191333,
+    "currentTokenRatio": 8808.428783899783,
+    "upperTokenRatio": 10173.470003060193,
+    "totalValueUSD": 4571.968836617817,
+    "pair": [
+      {
+        "symbol": "RLB",
+        "amount": 0,
+        "priceUSD": 0.203024008
+      },
+      {
+        "symbol": "WETH",
+        "amount": 2.556568401948866,
+        "priceUSD": 1788.3225158899
+      }
+    ],
+    "txHash": "0x768fb257737f398742569149d3953d2762bf341531a9fcf7f5c251601b8eaa61",
+    "id": "275.1698746010412"
+  },
+  {
     "timestamp": "2023-10-10T14:00:26.9205699Z",
     "address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
     "lowerTokenRatio": 1573.4636240360444,
@@ -352,6 +396,28 @@
     "id": "73.1697108805340"
   },
   {
+    "timestamp": "2023-10-10T14:45:13.5321112Z",
+    "address": "0xa6cc3c2531fdaa6ae1a3ca84c2855806728693e8",
+    "lowerTokenRatio": 160.09161048582203,
+    "currentTokenRatio": 159.32512317150722,
+    "upperTokenRatio": 167.96301680050527,
+    "totalValueUSD": 76170.87243322423,
+    "pair": [
+      {
+        "symbol": "LINK",
+        "amount": 0,
+        "priceUSD": 11.4385229129
+      },
+      {
+        "symbol": "WETH",
+        "amount": 41.796,
+        "priceUSD": 1822.4440719979
+      }
+    ],
+    "txHash": "0x8f1630faf9aeb1c907827d3826daab90a2a4f895565d79efe1a137afcb7526eb",
+    "id": "200.1698745622636"
+  },
+  {
     "timestamp": "2023-10-10T15:06:05.1828265Z",
     "address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
     "lowerTokenRatio": 1575.037795907559,
@@ -394,6 +460,28 @@
     ],
     "txHash": "0x0dcac060407276446958f259cea904c4ad9b3631f6f1de401f72ccc544d9ddb5",
     "id": "92.1697108805341"
+  },
+  {
+    "timestamp": "2023-10-10T15:34:01.29328Z",
+    "address": "0xceb63a909d95c9222cdf5b08044f5dae72cd036e",
+    "lowerTokenRatio": 89270.8278777591,
+    "currentTokenRatio": 83939.32746793832,
+    "upperTokenRatio": 91074.12715808558,
+    "totalValueUSD": 17002.905205671148,
+    "pair": [
+      {
+        "symbol": "JOE",
+        "amount": 361249.6958451303,
+        "priceUSD": 0.0216515511
+      },
+      {
+        "symbol": "WETH",
+        "amount": 5.0518349862073935,
+        "priceUSD": 1817.4166379717
+      }
+    ],
+    "txHash": "0xe4c4a0f49f98012f086534ba70573768a437c3120a24d2b10ac338e411cf77dc",
+    "id": "116.1698752969969"
   },
   {
     "timestamp": "2023-10-10T15:39:01.0789089Z",
@@ -462,6 +550,28 @@
     "id": "101.1697108805342"
   },
   {
+    "timestamp": "2023-10-10T15:41:00.811246Z",
+    "address": "0xa6cc3c2531fdaa6ae1a3ca84c2855806728693e8",
+    "lowerTokenRatio": 159.1339844542385,
+    "currentTokenRatio": 159.830580792715,
+    "upperTokenRatio": 160.09161048582203,
+    "totalValueUSD": 1090782.557111638,
+    "pair": [
+      {
+        "symbol": "LINK",
+        "amount": 53719.003579279655,
+        "priceUSD": 11.3522543956
+      },
+      {
+        "symbol": "WETH",
+        "amount": 265.068808139321,
+        "priceUSD": 1814.4374133554
+      }
+    ],
+    "txHash": "0x9a8c320ebcec70821adff14d9b1afc2844ace62fb83e878326559a802afc6df1",
+    "id": "1.1698745457754"
+  },
+  {
     "timestamp": "2023-10-10T15:42:14.3565214Z",
     "address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
     "lowerTokenRatio": 1550.0389650203106,
@@ -526,5 +636,27 @@
     ],
     "txHash": "0x949a853df6ed3a322ebb3a5353c5345ffff434f43a57c4679612a98cbc1f23b5",
     "id": "104.1697108805342"
+  },
+  {
+    "timestamp": "2023-10-10T16:11:14.3607071Z",
+    "address": "0xa6cc3c2531fdaa6ae1a3ca84c2855806728693e8",
+    "lowerTokenRatio": 151.67634125411928,
+    "currentTokenRatio": 156.1650812487306,
+    "upperTokenRatio": 156.2953391112304,
+    "totalValueUSD": 1662762.7035953975,
+    "pair": [
+      {
+        "symbol": "LINK",
+        "amount": 144822.7900358583,
+        "priceUSD": 11.481360794
+      },
+      {
+        "symbol": "WETH",
+        "amount": 0,
+        "priceUSD": 1792.987641241
+      }
+    ],
+    "txHash": "0x985cd8919951c55d2ebc27d2ecfe4d8bec63a299bf9dcea5f799968915502fa0",
+    "id": "291.1698745697699"
   }
 ]

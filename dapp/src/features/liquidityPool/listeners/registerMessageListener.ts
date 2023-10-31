@@ -1,9 +1,10 @@
 import { Message, NatsWorkerSendEvents, NatsWorkerSubscribe, NatsWorkerUnsubscribe } from '@src/modules';
 import { createAppJwt } from '@src/modules/nats/utils';
 import { getAccessToken, isMockedApi } from '@src/utils';
+import { isEqual } from 'lodash';
 import exampleData from '../data.json';
-import { liquidityPoolState, loadData, setLiquidityPoolItems } from '../slice';
-import { LiquidityPoolItem } from '../types';
+import { defaultTokenPair, liquidityPoolState, loadData, setLiquidityPoolItems, setTokenPairs } from '../slice';
+import { LiquidityPoolItem, TokenPair } from '../types';
 
 export function registerMessageListener(listen: ListenState) {
   listen({
@@ -14,10 +15,15 @@ export function registerMessageListener(listen: ListenState) {
           return { ...JSON.parse(x.data), id: x.id } as LiquidityPoolItem;
         });
 
-        const filteredItems = newItems.filter((x) => x.pair[0].symbol === 'USDC' && x.pair[1].symbol === 'WETH');
-        if (filteredItems.length > 0) {
-          const { items } = liquidityPoolState(api.getState());
-          api.dispatch(setLiquidityPoolItems({ items: [...items, ...filteredItems] }));
+        if (newItems.length > 0) {
+          const { items, tokenPairs } = liquidityPoolState(api.getState());
+          const newList = [...items, ...newItems];
+          api.dispatch(setLiquidityPoolItems({ items: newList }));
+
+          if (tokenPairs.length === 1) {
+            const tokenPairs = getTopPairs(newItems);
+            api.dispatch(setTokenPairs({ tokenPairs }));
+          }
         }
       };
 
@@ -78,4 +84,29 @@ function connectToNats({ onMessages, onError }: ConnectToNatsOptions) {
     worker.postMessage(unsubscribeEvent);
     worker.terminate();
   };
+}
+
+function getTopPairs(list: LiquidityPoolItem[]): TokenPair[] {
+  const pairStats: { symbol1: string; symbol2: string; count: number }[] = [];
+
+  list.forEach((item) => {
+    const symbol1 = item.pair[0].symbol;
+    const symbol2 = item.pair[1].symbol;
+    let pair = pairStats.find((x) => x.symbol1 === symbol1 && x.symbol2 === symbol2);
+    if (!pair) {
+      pair = { symbol1, symbol2, count: 0 };
+      pairStats.push(pair);
+    }
+    pair.count += 1;
+  });
+
+  pairStats.sort((a, b) => b.count - a.count);
+  const topPairs: TokenPair[] = pairStats
+    .map((x) => ({ symbol1: x.symbol1, symbol2: x.symbol2 }))
+    .filter((x) => !isEqual(x, defaultTokenPair))
+    .slice(0, 4);
+
+  const tokenPairs = [defaultTokenPair, ...topPairs];
+
+  return tokenPairs;
 }

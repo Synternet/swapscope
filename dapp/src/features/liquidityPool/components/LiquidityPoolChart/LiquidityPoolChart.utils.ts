@@ -1,8 +1,8 @@
 import { formatPoolLimit, formatUsd, isMax, isMin, truncateNumber } from '@src/utils';
-import { Data } from 'plotly.js';
-import { getPoolItemTotalUsd, itemIsInDateRange } from '../../LiquidityPool.utils';
-import { LiquidityPoolItem } from '../../types';
 import { differenceInMilliseconds } from 'date-fns';
+import { Data } from 'plotly.js';
+import { getPoolItemTotalUsd, itemIsInDateRange, matchTokenPair } from '../../LiquidityPool.utils';
+import { LiquidityPoolItem, TokenPair } from '../../types';
 
 const chartWidthPx = 1000;
 const barWidthPx = 5;
@@ -24,9 +24,16 @@ interface GenerateTracesOptions {
   filteredData: LiquidityPoolItem[];
   dateRange: [string, string];
   priceRange: [number, number];
+  tokenPair: TokenPair;
 }
 
-export function generateTraces({ data, filteredData, dateRange, priceRange }: GenerateTracesOptions): Data[] {
+export function generateTraces({
+  data,
+  filteredData,
+  dateRange,
+  priceRange,
+  tokenPair,
+}: GenerateTracesOptions): Data[] {
   const diffMs = differenceInMilliseconds(new Date(dateRange[1]), new Date(dateRange[0]));
   const onePixel = diffMs / chartWidthPx;
   const customWidth = Math.round(barWidthPx * onePixel);
@@ -56,7 +63,7 @@ export function generateTraces({ data, filteredData, dateRange, priceRange }: Ge
     },
   };
 
-  const pricePoints = getPricePoints(data, dateRange);
+  const pricePoints = getPricePoints({ data, dateRange, tokenPair });
   const line: Data = {
     x: pricePoints.map((x) => getChartDate(x.timestamp)),
     y: pricePoints.map((x) => x.price),
@@ -90,7 +97,7 @@ export function generateTraces({ data, filteredData, dateRange, priceRange }: Ge
   return traces;
 }
 
-function getChartDate(isoDate: string){
+function getChartDate(isoDate: string) {
   return new Date(isoDate);
 }
 
@@ -99,13 +106,22 @@ interface PricePoint {
   price: string;
 }
 
-function getPricePoints(data: LiquidityPoolItem[], dateRange: [string, string]): PricePoint[] {
-  const uniqueFilteredPrices = data.filter((item, idx) => {
+interface GetPricePointsOptions {
+  data: LiquidityPoolItem[];
+  dateRange: [string, string];
+  tokenPair: TokenPair;
+}
+
+function getPricePoints(options: GetPricePointsOptions): PricePoint[] {
+  const { data, dateRange, tokenPair } = options;
+  const tokenPairItems = data.filter((x) => matchTokenPair(x, tokenPair));
+
+  const uniqueFilteredPrices = tokenPairItems.filter((item, idx) => {
     if (!itemIsInDateRange(item, dateRange)) {
       return false;
     }
 
-    const index = data.findIndex((x) => x.timestamp === item.timestamp);
+    const index = tokenPairItems.findIndex((x) => x.timestamp === item.timestamp);
     return index === idx;
   });
 
