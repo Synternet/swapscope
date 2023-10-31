@@ -16,12 +16,7 @@ const Placeholder = styled(Box)(({ theme }) => ({
 }));
 
 export function LiquidityPool() {
-  const {
-    items,
-    liquiditySizeFilter,
-    dateFilter,
-    priceRange,
-  } = useSelector(liquidityPoolState);
+  const { items, liquiditySizeFilter, dateFilter, priceRange, tokenPair } = useSelector(liquidityPoolState);
   const dispatch = useDispatch();
   const initialized = useRef(false);
 
@@ -35,15 +30,21 @@ export function LiquidityPool() {
   }, [dispatch]);
 
   const filteredList: LiquidityPoolItem[] = useMemo(
-    () => filterItems(items, { liquiditySize: liquiditySizeFilter.value, dateRange: dateFilter.range }),
-    [items, liquiditySizeFilter, dateFilter],
+    () => filterItems(items, { liquiditySize: liquiditySizeFilter.value, dateRange: dateFilter.range, tokenPair }),
+    [items, liquiditySizeFilter, dateFilter, tokenPair],
   );
 
   return (
     <>
       <Placeholder>SwapScope</Placeholder>
       <Container maxWidth="xl">
-        <LiquidityPoolChart data={items} filteredData={filteredList} dateRange={dateFilter.range} priceRange={priceRange} />
+        <LiquidityPoolChart
+          data={items}
+          filteredData={filteredList}
+          dateRange={dateFilter.range}
+          priceRange={priceRange}
+          tokenPair={tokenPair}
+        />
         <Box sx={{ my: '20px' }}>
           <LiquidityPoolFilter />
         </Box>

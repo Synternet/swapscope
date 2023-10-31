@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Plot from 'react-plotly.js';
 import { useSelector } from 'react-redux';
 import { liquidityPoolState } from '../../slice';
-import { LiquidityPoolItem } from '../../types';
+import { LiquidityPoolItem, TokenPair } from '../../types';
 import { generateTraces } from './LiquidityPoolChart.utils';
 
 interface ChartProps {
@@ -11,12 +11,14 @@ interface ChartProps {
   priceRange: [number, number];
   data: LiquidityPoolItem[];
   filteredData: LiquidityPoolItem[];
+  tokenPair: TokenPair;
 }
 
-export function Chart({ data, filteredData, dateRange: initialDateRange, priceRange }: ChartProps) {
+export function Chart(props: ChartProps) {
+  const { data, filteredData, dateRange: initialDateRange, priceRange, tokenPair } = props;
   const { revision } = useSelector(liquidityPoolState);
   const [dateRange, setDateRange] = useState([...initialDateRange] as [string, string]);
-  const traces = generateTraces({ data, filteredData, dateRange, priceRange });
+  const traces = generateTraces({ data, filteredData, dateRange, priceRange, tokenPair });
 
   const handleRelayout = useCallback(
     (event: Readonly<PlotRelayoutEvent>) => {

@@ -26,7 +26,7 @@ export function PoolSizeFilter(props: PoolSizeFilterProps) {
   }, [initialValue]);
 
   return (
-    <Box sx={{ width: 300 }}>
+    <Box sx={{ width: 300, padding: '0 24px', boxSizing: 'content-box' }}>
       <Typography gutterBottom>Liquidity add size</Typography>
       <Slider
         data-testid="PoolSizeFilter"

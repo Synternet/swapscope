@@ -1,6 +1,6 @@
 import { Box, styled } from '@mui/material';
 import dynamic from 'next/dynamic';
-import { LiquidityPoolItem } from '../../types';
+import { LiquidityPoolItem, TokenPair } from '../../types';
 import { Loader } from './Loader';
 
 const Wrapper = styled(Box)({
@@ -11,7 +11,7 @@ const Wrapper = styled(Box)({
     justifyContent: 'center',
     left: '50%',
     transform: 'translateX(-50%)',
-  }
+  },
 });
 
 const Chart = dynamic(() => import('./Chart').then((mod) => mod.Chart), {
@@ -24,12 +24,19 @@ interface LiquidityPoolChartProps {
   filteredData: LiquidityPoolItem[];
   dateRange: [string, string];
   priceRange: [number, number];
+  tokenPair: TokenPair;
 }
 
-export function LiquidityPoolChart({ data, filteredData, dateRange, priceRange }: LiquidityPoolChartProps) {
+export function LiquidityPoolChart({ data, filteredData, dateRange, priceRange, tokenPair }: LiquidityPoolChartProps) {
   return (
     <Wrapper data-testid="LiquidityPoolChart">
-      <Chart data={data} filteredData={filteredData} dateRange={dateRange} priceRange={priceRange}/>
+      <Chart
+        data={data}
+        filteredData={filteredData}
+        dateRange={dateRange}
+        priceRange={priceRange}
+        tokenPair={tokenPair}
+      />
     </Wrapper>
   );
 }
