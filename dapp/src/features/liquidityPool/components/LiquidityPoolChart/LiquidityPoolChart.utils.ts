@@ -4,7 +4,6 @@ import { Data } from 'plotly.js';
 import { getPoolItemTotalUsd, itemIsInDateRange, matchTokenPair } from '../../LiquidityPool.utils';
 import { LiquidityPoolItem, TokenPair } from '../../types';
 
-const chartWidthPx = 1000;
 const barWidthPx = 5;
 
 const hoverTemplate = (token1: string, token2: string) => `
@@ -25,6 +24,7 @@ interface GenerateTracesOptions {
   dateRange: [string, string];
   priceRange: [number, number];
   tokenPair: TokenPair;
+  chartWidth: number;
 }
 
 export function generateTraces({
@@ -33,10 +33,11 @@ export function generateTraces({
   dateRange,
   priceRange,
   tokenPair,
+  chartWidth,
 }: GenerateTracesOptions): Data[] {
   const diffMs = differenceInMilliseconds(new Date(dateRange[1]), new Date(dateRange[0]));
-  const onePixel = diffMs / chartWidthPx;
-  const customWidth = Math.round(barWidthPx * onePixel);
+  const onePixel = diffMs / chartWidth;
+  const customWidth = barWidthPx * onePixel;
 
   const bars: Data & { base: any[] } = {
     x: filteredData.map((x) => getChartDate(x.timestamp)),
@@ -70,6 +71,7 @@ export function generateTraces({
     type: 'scatter',
     name: 'Actual Price',
     hoverinfo: 'skip',
+    mode: 'lines',
     marker: {
       color: '#4F3F85',
     },
@@ -186,4 +188,18 @@ function getLiquidityPoolPosition(item: LiquidityPoolItem): LiquidityPoolItemPos
 
 function getTokenPrice(token1Usd: number, token2Usd: number) {
   return token1Usd / token2Usd;
+}
+
+export function getChartWidth(chartElement?: HTMLDivElement): number | undefined {
+  if (!chartElement) {
+    return;
+  }
+
+  const gridLayer = chartElement.querySelector('.gridlayer');
+  if (!gridLayer) {
+    return;
+  }
+
+  const { width } = gridLayer.getBoundingClientRect();
+  return width;
 }
