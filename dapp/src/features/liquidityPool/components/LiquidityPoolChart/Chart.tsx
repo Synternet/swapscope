@@ -1,5 +1,5 @@
 import { PlotRelayoutEvent } from 'plotly.js';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Plot from 'react-plotly.js';
 import { useSelector } from 'react-redux';
 import { liquidityPoolState } from '../../slice';
@@ -19,8 +19,11 @@ export function Chart(props: ChartProps) {
   const { revision } = useSelector(liquidityPoolState);
   const [dateRange, setDateRange] = useState([...initialDateRange] as [string, string]);
   const [chartWidth, setChartWidth] = useState(0);
-  const traces = generateTraces({ data, filteredData, dateRange, priceRange, tokenPair, chartWidth });
   const chartRef = useRef<Plot & { el: HTMLDivElement }>(null);
+  const traces = useMemo(
+    () => generateTraces({ data, filteredData, dateRange, priceRange, tokenPair, chartWidth }),
+    [data, filteredData, dateRange, priceRange, tokenPair, chartWidth],
+  );
 
   const checkChartWidth = useCallback(() => {
     const newWidth = getChartWidth(chartRef.current?.el);
