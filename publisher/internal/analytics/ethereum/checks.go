@@ -26,11 +26,13 @@ func (a *Analytics) isBurnEvent(evLog EventLog) bool {
 }
 
 func hasTopics(evLog EventLog) bool {
-	if len(evLog.Topics) == 0 {
-		log.Println("Log message of TX", evLog.TransactionHash, "has no topics.")
-		return false
+	for _, str := range evLog.Topics {
+		if str != "" {
+			return true
+		}
 	}
-	return true
+	log.Println("Log message of TX", evLog.TransactionHash, "has no topics.")
+	return false
 }
 
 func isOrderCorrect(position Position) bool {
