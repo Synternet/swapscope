@@ -207,7 +207,7 @@ func (add Addition) Extract(mint EventLog) (Operation, error) {
 }
 
 func (add Addition) savePool(addPos Position) error {
-	if isEitherTokenAmountIsZero(addPos) || isEitherTokenUnknown(addPos) {
+	if isEitherTokenAmountZero(addPos) || isEitherTokenUnknown(addPos) {
 		return nil
 	}
 	// In this case both tokens were transferred to LP and their order is correct

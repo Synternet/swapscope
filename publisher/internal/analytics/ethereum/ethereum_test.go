@@ -288,7 +288,7 @@ func Test_isEitherTokenAmountIsZero(t *testing.T) {
 		{Position{Token0: setAmount(knownTokens["WBTC"], 0.00001), Token1: setAmount(knownTokens["PEPE"], 99999999)}, false},
 	}
 	for _, test := range tests {
-		res := isEitherTokenAmountIsZero(test.input)
+		res := isEitherTokenAmountZero(test.input)
 		if res != test.trueRes {
 			t.Errorf("isEitherTokenAmountIsZero(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
 		}
