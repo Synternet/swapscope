@@ -1,6 +1,12 @@
-import { Message, NatsWorkerSendEvents, NatsWorkerSubscribe, NatsWorkerUnsubscribe, loadMockedMessages } from '@src/modules';
+import {
+  Message,
+  NatsWorkerSendEvents,
+  NatsWorkerSubscribe,
+  NatsWorkerUnsubscribe,
+  loadMockedMessages,
+} from '@src/modules';
 import { createAppJwt } from '@src/modules/nats/utils';
-import { getAccessToken, isMockedApi } from '@src/utils';
+import { getAccessToken, getSubjectName, isMockedApi } from '@src/utils';
 import { isEqual } from 'lodash';
 import { defaultTokenPair, liquidityPoolState, loadData, setLiquidityPoolItems, setTokenPairs } from '../slice';
 import { LiquidityPoolItem, TokenPair } from '../types';
@@ -11,7 +17,11 @@ export function registerMessageListener(listen: ListenState) {
     effect: async (_, api) => {
       const onMessages = (messages: Message[]) => {
         const newItems = messages.map((x) => {
-          return { ...JSON.parse(x.data), id: x.id } as LiquidityPoolItem;
+          return {
+            ...JSON.parse(x.data),
+            id: x.id,
+            operationType: x.subject.startsWith(`${getSubjectName()}.add`) ? 'add' : 'remove',
+          } as LiquidityPoolItem;
         });
 
         if (newItems.length > 0) {
@@ -52,7 +62,7 @@ function connectToNats({ onMessages, onError }: ConnectToNatsOptions) {
   const subscribeEvent: NatsWorkerSubscribe = {
     type: 'subscribe',
     jwt,
-    subject: 'SwapScopeTest.analyticstest0.>',
+    subject: `${getSubjectName()}.>`,
   };
 
   worker.postMessage(subscribeEvent);

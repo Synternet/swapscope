@@ -1,6 +1,6 @@
 import { dateNow, formatUsdCompact, isMax, isMin } from '@src/utils';
 import { addHours, isWithinInterval } from 'date-fns';
-import { LiquidityPoolItem, LiquiditySizeFilterOptions, TokenPair } from './types';
+import { LiquidityPoolItem, LiquiditySizeFilterOptions, OperationType, TokenPair } from './types';
 
 const poolSizeValues = [0, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9];
 
@@ -52,11 +52,16 @@ export function filterItems(
     liquiditySize: [number, number];
     dateRange: [string, string];
     tokenPair: TokenPair;
+    operationType: OperationType;
   },
 ) {
-  const { liquiditySize, dateRange, tokenPair } = filter;
+  const { liquiditySize, dateRange, tokenPair, operationType } = filter;
   return items.filter((item) => {
     if (!matchTokenPair(item, tokenPair)) {
+      return false;
+    }
+
+    if (operationType !== 'all' && item.operationType !== operationType){
       return false;
     }
 

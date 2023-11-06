@@ -1,14 +1,15 @@
 import { formatPoolLimit, formatUsd, isMax, isMin, truncateNumber } from '@src/utils';
 import { differenceInMilliseconds } from 'date-fns';
-import { Data } from 'plotly.js';
+import { Data, PlotData } from 'plotly.js';
 import { getPoolItemTotalUsd, itemIsInDateRange, matchTokenPair } from '../../LiquidityPool.utils';
 import { LiquidityPoolItem, TokenPair } from '../../types';
 
 const barWidthPx = 5;
 
 const hoverTemplate = (token1: string, token2: string) => `
-<span style="color: white">\
- %{x|%Y-%m-%d %H:%M:%S}<br />\
+<span>\
+ %{customdata[6]}<br />\
+  %{x|%Y-%m-%d %H:%M:%S}<br />\
   Low: %{customdata[0]}<br />\
   High: %{customdata[1]}<br />\
   ${token1} amount: %{customdata[2]}<br />\
@@ -39,37 +40,14 @@ export function generateTraces({
   const onePixel = diffMs / chartWidth;
   const customWidth = barWidthPx * onePixel;
 
-  const bars: Data & { base: any[] } = {
-    x: filteredData.map((x) => getChartDate(x.timestamp)),
-    y: filteredData.map((x) =>
-      isMin(x.lowerTokenRatio) || isMax(x.upperTokenRatio)
-        ? priceRange[1] - priceRange[0]
-        : x.upperTokenRatio - x.lowerTokenRatio,
-    ),
-    base: filteredData.map((x) => (isMin(x.lowerTokenRatio) ? priceRange[0] : x.lowerTokenRatio)),
-    name: 'Added Liquidity',
-    type: 'bar',
-    width: customWidth,
-    hovertemplate: hoverTemplate(filteredData[0]?.pair[0].symbol, filteredData[0]?.pair[1].symbol),
-    customdata: filteredData.map((x) => [
-      formatPoolLimit(x.lowerTokenRatio),
-      formatPoolLimit(x.upperTokenRatio),
-      truncateNumber(x.pair[0].amount),
-      truncateNumber(x.pair[1].amount),
-      formatUsd(getPoolItemTotalUsd(x)),
-      truncateNumber(getTokenPrice(x.pair[1].priceUSD, x.pair[0].priceUSD)),
-    ]),
-    marker: {
-      color: filteredData.map(getBarColor),
-    },
-  };
+  const bars = generateBars({ items: filteredData, priceRange, customWidth });
 
   const pricePoints = getPricePoints({ data, dateRange, tokenPair });
   const line: Data = {
     x: pricePoints.map((x) => getChartDate(x.timestamp)),
     y: pricePoints.map((x) => x.price),
     type: 'scatter',
-    name: 'Actual Price',
+    name: 'Actual price',
     hoverinfo: 'skip',
     mode: 'lines',
     marker: {
@@ -78,7 +56,7 @@ export function generateTraces({
   };
 
   const filteredMiddlePoints = filteredData.filter((x) => !isMax(x.upperTokenRatio) && !isMin(x.lowerTokenRatio));
-  var middle: Data = {
+  const middle: Data = {
     x: filteredMiddlePoints.map((x) => getChartDate(x.timestamp)),
     y: filteredMiddlePoints.map((x) =>
       isMin(x.lowerTokenRatio) || isMax(x.upperTokenRatio)
@@ -99,7 +77,39 @@ export function generateTraces({
   return traces;
 }
 
-function getChartDate(isoDate: string) {
+interface GenerateBarsOptions {
+  items: LiquidityPoolItem[];
+  priceRange: [number, number];
+  customWidth: number;
+}
+
+function generateBars({ items, priceRange, customWidth }: GenerateBarsOptions): Data & { base: any[] } {
+  return {
+    x: items.map((x) => getChartDate(x.timestamp)),
+    y: items.map((x) =>
+      isMin(x.lowerTokenRatio) || isMax(x.upperTokenRatio)
+        ? priceRange[1] - priceRange[0]
+        : x.upperTokenRatio - x.lowerTokenRatio,
+    ),
+    base: items.map((x) => (isMin(x.lowerTokenRatio) ? priceRange[0] : x.lowerTokenRatio)),
+    name: 'Liquidity add/remove',
+    type: 'bar',
+    width: customWidth,
+    hovertemplate: hoverTemplate(items[0]?.pair[0].symbol, items[0]?.pair[1].symbol),
+    customdata: items.map((x) => [
+      formatPoolLimit(x.lowerTokenRatio),
+      formatPoolLimit(x.upperTokenRatio),
+      truncateNumber(x.pair[0].amount),
+      truncateNumber(x.pair[1].amount),
+      formatUsd(getPoolItemTotalUsd(x)),
+      truncateNumber(getTokenPrice(x.pair[1].priceUSD, x.pair[0].priceUSD)),
+      x.operationType === 'add' ? "Liquidity add" : 'Liquidity remove',
+    ]),
+    marker: getBarMarker(items),
+  };
+}
+
+export function getChartDate(isoDate: string) {
   return new Date(isoDate);
 }
 
@@ -147,26 +157,39 @@ enum LiquidityPoolItemPosition {
   neutral,
 }
 
-const barColorMap: { [key in LiquidityPoolItemPosition]: string } = {
-  [LiquidityPoolItemPosition.higher]: '#1abc9c',
-  [LiquidityPoolItemPosition.lower]: '#e74c3c',
-  [LiquidityPoolItemPosition.neutral]: '#f39c12',
+const barColorMap: { [key in LiquidityPoolItemPosition]: { strong: string; weak: string } } = {
+  [LiquidityPoolItemPosition.higher]: { strong: '#1abc9c', weak: 'rgba(26, 188, 156, 0.2)' },
+  [LiquidityPoolItemPosition.lower]: { strong: '#e74c3c', weak: 'rgba(231, 76, 60, 0.2)' },
+  [LiquidityPoolItemPosition.neutral]: { strong: '#f39c12', weak: 'rgba(243, 156, 18, 0.2)' },
 };
 
-function getBarColor(item: LiquidityPoolItem): string {
-  const position = getLiquidityPoolPosition(item);
-  return barColorMap[position];
+function getBarMarker(items: LiquidityPoolItem[]): PlotData['marker'] {
+  return {
+    color: items.map((x) => {
+      const position = getLiquidityPoolPosition(x);
+      return x.operationType === 'add' ? barColorMap[position].strong : barColorMap[position].weak;
+    }),
+    line: {
+      color: items.map((x) => {
+        const position = getLiquidityPoolPosition(x);
+        return barColorMap[position].strong;
+      }),
+      width: items.map((x) => {
+        return x.operationType === 'add' ? 0 : 1;
+      }),
+    },
+  };
 }
 
-const middlePointColorMap: { [key in LiquidityPoolItemPosition]: string } = {
-  [LiquidityPoolItemPosition.higher]: '#01775e',
-  [LiquidityPoolItemPosition.lower]: '#991208',
-  [LiquidityPoolItemPosition.neutral]: '#b87107',
+const middlePointColorMap: { [key in LiquidityPoolItemPosition]: { strong: string; weak: string } } = {
+  [LiquidityPoolItemPosition.higher]: { strong: '#01775e', weak: '#1abc9c' },
+  [LiquidityPoolItemPosition.lower]: { strong: '#991208', weak: '#e74c3c' },
+  [LiquidityPoolItemPosition.neutral]: { strong: '#b87107', weak: '#f39c12' },
 };
 
 function getMiddlePointColor(item: LiquidityPoolItem): string {
   const position = getLiquidityPoolPosition(item);
-  return middlePointColorMap[position];
+  return item.operationType === 'add' ? middlePointColorMap[position].strong : middlePointColorMap[position].weak;
 }
 
 function getLiquidityPoolPosition(item: LiquidityPoolItem): LiquidityPoolItemPosition {

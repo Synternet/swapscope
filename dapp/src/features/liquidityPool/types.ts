@@ -4,7 +4,7 @@ export interface LiquidityPoolItemToken {
   priceUSD: number;
 }
 
-export interface LiquidityPoolItem {
+export interface LiquidityPoolItemMessage {
   id: string;
   timestamp: string;
   address: string;
@@ -16,6 +16,10 @@ export interface LiquidityPoolItem {
   txHash: string;
 }
 
+export interface LiquidityPoolItem extends LiquidityPoolItemMessage {
+  operationType: Exclude<OperationType, 'all'>;
+}
+
 export interface LiquiditySizeFilterOptions {
   max: number;
   value: [number, number];
@@ -25,3 +29,5 @@ export interface TokenPair {
   symbol1: string;
   symbol2: string;
 }
+
+export type OperationType = 'all' | 'add' | 'remove';

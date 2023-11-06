@@ -16,9 +16,9 @@ describe('Liquidity Pool', () => {
     cy.matchImageSnapshot('liquidity-pool-filter-date-48h');
   });
 
-  it('filters by liquidity add size', () => {
+  it('filters by liquidity value', () => {
     cy.visit('/');
-    cy.getByTestId('PoolSizeFilter').within(() => cy.get('[data-index="1"]').first().click());
+    cy.getByTestId('LiquidityValueFilter').within(() => cy.get('[data-index="1"]').first().click());
     waitForItemsLoaded(12, 24);
     cy.matchImageSnapshot('liquidity-pool-filter-size');
   });
@@ -30,6 +30,20 @@ describe('Liquidity Pool', () => {
     waitForItemsLoaded(3, 6);
     cy.matchImageSnapshot('liquidity-pool-filter-token-pair-link-weth');
   });
+
+  it.only('filters by operation type', () => {
+    cy.visit('/');
+    cy.getByTestId('OperationTypeFilter').click();
+    cy.getByTestId('OperationTypeFilter-add').click();
+    waitForItemsLoaded(7, 14);
+    cy.matchImageSnapshot('liquidity-pool-filter-operation-type-add');
+
+    cy.getByTestId('OperationTypeFilter').click();
+    cy.getByTestId('OperationTypeFilter-remove').click();
+    waitForItemsLoaded(11, 21);
+    cy.matchImageSnapshot('liquidity-pool-filter-operation-type-remove');
+  });
+  
 
   it('zooms in chart', () => {
     cy.visit('/');
