@@ -1,6 +1,6 @@
 import { PayloadAction, createAction, createSlice } from '@reduxjs/toolkit';
 import { getDateFilter, getPoolSizeFilterOptions, getPriceRange, poolSizeSteps } from './LiquidityPool.utils';
-import { LiquidityPoolItem, LiquiditySizeFilterOptions, TokenPair } from './types';
+import { LiquidityPoolItem, LiquiditySizeFilterOptions, OperationType, TokenPair } from './types';
 
 interface LiquidityPoolState {
   items: LiquidityPoolItem[];
@@ -9,6 +9,7 @@ interface LiquidityPoolState {
   liquiditySizeFilter: LiquiditySizeFilterOptions;
   tokenPair: TokenPair;
   tokenPairs: TokenPair[];
+  operationType: OperationType;
   revision: string;
 }
 
@@ -24,6 +25,7 @@ const initialState = (): LiquidityPoolState => ({
   },
   tokenPair: defaultTokenPair,
   tokenPairs: [defaultTokenPair],
+  operationType: 'all',
   revision: 'initial',
 });
 
@@ -55,6 +57,9 @@ const slice = createSlice({
       state.priceRange = getPriceRange(state.items, state.tokenPair);
       state.revision = Date.now().toString();
     },
+    setOperationType: (state, { payload }: PayloadAction<{ operationType: OperationType }>) => {
+      state.operationType = payload.operationType;
+    },
     resetLiquidityPoolState: () => initialState(),
   },
 });
@@ -62,7 +67,14 @@ const slice = createSlice({
 export const liquidityPoolReducer = slice.reducer;
 export const liquidityPoolState = (state: RootState) => state.liquidityPool;
 
-export const { setLiquiditySize, setLiquidityPoolItems, changeDateFilter, setTokenPairs, setTokenPair } = slice.actions;
+export const {
+  setLiquiditySize,
+  setLiquidityPoolItems,
+  changeDateFilter,
+  setTokenPairs,
+  setTokenPair,
+  setOperationType,
+} = slice.actions;
 
 const prefix = slice.name;
 export const loadData = createAction(`${prefix}/loadData`);

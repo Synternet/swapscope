@@ -16,7 +16,7 @@ const Placeholder = styled(Box)(({ theme }) => ({
 }));
 
 export function LiquidityPool() {
-  const { items, liquiditySizeFilter, dateFilter, priceRange, tokenPair } = useSelector(liquidityPoolState);
+  const { items, liquiditySizeFilter, dateFilter, priceRange, tokenPair, operationType } = useSelector(liquidityPoolState);
   const dispatch = useDispatch();
   const initialized = useRef(false);
 
@@ -30,8 +30,8 @@ export function LiquidityPool() {
   }, [dispatch]);
 
   const filteredList: LiquidityPoolItem[] = useMemo(
-    () => filterItems(items, { liquiditySize: liquiditySizeFilter.value, dateRange: dateFilter.range, tokenPair }),
-    [items, liquiditySizeFilter, dateFilter, tokenPair],
+    () => filterItems(items, { liquiditySize: liquiditySizeFilter.value, dateRange: dateFilter.range, tokenPair, operationType }),
+    [items, liquiditySizeFilter, dateFilter, tokenPair, operationType],
   );
 
   return (

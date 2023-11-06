@@ -1,3 +1,14 @@
+type Environment = 'local';
+
+export function getEnv() {
+  const NEXT_PUBLIC_ENV = process.env.NEXT_PUBLIC_ENV;
+  if (!NEXT_PUBLIC_ENV) {
+    throw Error('Missing env variable: NEXT_PUBLIC_ENV');
+  }
+
+  return NEXT_PUBLIC_ENV as Environment;
+}
+
 export function isMockedApi() {
   return process.env.NEXT_PUBLIC_MOCK_API === 'true';
 }
@@ -20,13 +31,11 @@ export function getAccessToken() {
   return NEXT_PUBLIC_ACCESS_TOKEN;
 }
 
-type Environment = 'local';
-
-export function getEnv() {
-  const NEXT_PUBLIC_ENV = process.env.NEXT_PUBLIC_ENV;
-  if (!NEXT_PUBLIC_ENV) {
-    throw Error('Missing env variable: NEXT_PUBLIC_ENV');
+export function getSubjectName() {
+  const NEXT_PUBLIC_SUBJECT_NAME = process.env.NEXT_PUBLIC_SUBJECT_NAME;
+  if (!NEXT_PUBLIC_SUBJECT_NAME) {
+    throw Error('Missing env variable: NEXT_PUBLIC_SUBJECT_NAME');
   }
 
-  return NEXT_PUBLIC_ENV as Environment;
+  return NEXT_PUBLIC_SUBJECT_NAME;
 }

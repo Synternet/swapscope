@@ -3,13 +3,13 @@ import { useEffect, useState } from 'react';
 import { poolSizeSteps } from '../../LiquidityPool.utils';
 import { getStepFromValue, getStepRange, getStepValueText, getValueRange } from './LiquidityPoolFilter.utils';
 
-interface PoolSizeFilterProps {
+interface LiquidityValueFilterProps {
   max: number;
   value: [number, number];
   onChange: (value: [number, number]) => void;
 }
 
-export function PoolSizeFilter(props: PoolSizeFilterProps) {
+export function LiquiditySizeFilter(props: LiquidityValueFilterProps) {
   const { max, value: initialValue, onChange } = props;
   const [value, setValue] = useState<[number, number]>(getStepRange(initialValue));
   const marks = poolSizeSteps.map((x, idx) => ({ value: idx, label: x.label }));
@@ -27,9 +27,9 @@ export function PoolSizeFilter(props: PoolSizeFilterProps) {
 
   return (
     <Box sx={{ width: 300, padding: '0 24px', boxSizing: 'content-box' }}>
-      <Typography gutterBottom>Liquidity add size</Typography>
+      <Typography gutterBottom>Liquidity value</Typography>
       <Slider
-        data-testid="PoolSizeFilter"
+        data-testid="LiquidityValueFilter"
         onChange={handleChange}
         valueLabelDisplay="auto"
         getAriaValueText={getStepValueText}

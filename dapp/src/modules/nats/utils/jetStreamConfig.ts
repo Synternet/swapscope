@@ -1,3 +1,4 @@
+import { getSubjectName } from '@src/utils/env';
 import { isEqual } from 'lodash';
 import { NatsConnection, StreamInfo, nanos } from 'nats.ws';
 import { JetStreamConfigItem } from '../types';
@@ -5,7 +6,7 @@ import { JetStreamConfigItem } from '../types';
 const config: JetStreamConfigItem[] = [
   {
     streamName: 'swapscope',
-    subjects: ['SwapScopeTest.analyticstest0.>'],
+    subjects: [`${getSubjectName()}.>`],
     maxAge: nanos(48 * 60 * 60 * 1000),
   },
 ];

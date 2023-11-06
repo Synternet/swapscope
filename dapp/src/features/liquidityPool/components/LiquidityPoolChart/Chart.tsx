@@ -4,7 +4,7 @@ import Plot from 'react-plotly.js';
 import { useSelector } from 'react-redux';
 import { liquidityPoolState } from '../../slice';
 import { LiquidityPoolItem, TokenPair } from '../../types';
-import { generateTraces, getChartWidth } from './LiquidityPoolChart.utils';
+import { generateTraces, getChartDate, getChartWidth } from './LiquidityPoolChart.utils';
 
 interface ChartProps {
   dateRange: [string, string];
@@ -71,6 +71,7 @@ export function Chart(props: ChartProps) {
         },
         xaxis: {
           type: 'date',
+          range: dateRange.map(getChartDate),
         },
         yaxis: {},
         margin: {
