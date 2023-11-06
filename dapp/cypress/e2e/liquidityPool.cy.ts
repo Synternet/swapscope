@@ -27,8 +27,15 @@ describe('Liquidity Pool', () => {
     cy.visit('/');
     cy.getByTestId('TokenPairFilter').within(() => cy.get('button').should('have.length', 5));
     cy.getByTestId('TokenPairFilter').within(() => cy.get('button').eq(1).click().blur());
-    waitForItemsLoaded(3, 11);
+    waitForItemsLoaded(3, 6);
     cy.matchImageSnapshot('liquidity-pool-filter-token-pair-link-weth');
+  });
+
+  it('zooms in chart', () => {
+    cy.visit('/');
+    waitForItemsLoaded(18, 35);
+    cy.getByTestId('LiquidityPoolChart').within(() => cy.get('.modebar a[data-title="Zoom in"]').click());
+    cy.matchImageSnapshot('liquidity-pool-zoom-in');
   });
 });
 

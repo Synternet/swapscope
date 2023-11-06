@@ -1,10 +1,10 @@
 import { PlotRelayoutEvent } from 'plotly.js';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Plot from 'react-plotly.js';
 import { useSelector } from 'react-redux';
 import { liquidityPoolState } from '../../slice';
 import { LiquidityPoolItem, TokenPair } from '../../types';
-import { generateTraces } from './LiquidityPoolChart.utils';
+import { generateTraces, getChartWidth } from './LiquidityPoolChart.utils';
 
 interface ChartProps {
   dateRange: [string, string];
@@ -18,10 +18,23 @@ export function Chart(props: ChartProps) {
   const { data, filteredData, dateRange: initialDateRange, priceRange, tokenPair } = props;
   const { revision } = useSelector(liquidityPoolState);
   const [dateRange, setDateRange] = useState([...initialDateRange] as [string, string]);
-  const traces = generateTraces({ data, filteredData, dateRange, priceRange, tokenPair });
+  const [chartWidth, setChartWidth] = useState(0);
+  const chartRef = useRef<Plot & { el: HTMLDivElement }>(null);
+  const traces = useMemo(
+    () => generateTraces({ data, filteredData, dateRange, priceRange, tokenPair, chartWidth }),
+    [data, filteredData, dateRange, priceRange, tokenPair, chartWidth],
+  );
+
+  const checkChartWidth = useCallback(() => {
+    const newWidth = getChartWidth(chartRef.current?.el);
+    if (newWidth && chartWidth !== newWidth) {
+      setChartWidth(newWidth);
+    }
+  }, [chartWidth]);
 
   const handleRelayout = useCallback(
     (event: Readonly<PlotRelayoutEvent>) => {
+      checkChartWidth();
       const xStart = event['xaxis.range[0]'] ?? event['xaxis.range']?.[0];
       const xEnd = event['xaxis.range[1]'] ?? event['xaxis.range']?.[1];
       if (xStart && xEnd) {
@@ -32,8 +45,12 @@ export function Chart(props: ChartProps) {
         setDateRange(initialDateRange);
       }
     },
-    [initialDateRange],
+    [initialDateRange, checkChartWidth],
   );
+
+  const handleInitialized = useCallback(() => {
+    checkChartWidth();
+  }, [checkChartWidth]);
 
   useEffect(() => {
     setDateRange(initialDateRange);
@@ -41,6 +58,7 @@ export function Chart(props: ChartProps) {
 
   return (
     <Plot
+      ref={chartRef}
       data={traces}
       style={{ width: '100%', height: '100%' }}
       config={{ responsive: true, displayModeBar: true, displaylogo: false }}
@@ -64,6 +82,7 @@ export function Chart(props: ChartProps) {
         },
       }}
       onRelayout={handleRelayout}
+      onInitialized={handleInitialized}
     />
   );
 }
