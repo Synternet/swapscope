@@ -1,7 +1,5 @@
 import { PayloadAction, createAction, createSlice } from '@reduxjs/toolkit';
-import { dateNow } from '@src/utils';
-import { addHours } from 'date-fns';
-import { getPoolSizeFilterOptions, getPriceRange, poolSizeSteps } from './LiquidityPool.utils';
+import { getDateFilter, getPoolSizeFilterOptions, getPriceRange, poolSizeSteps } from './LiquidityPool.utils';
 import { LiquidityPoolItem, LiquiditySizeFilterOptions, TokenPair } from './types';
 
 interface LiquidityPoolState {
@@ -18,7 +16,7 @@ export const defaultTokenPair: TokenPair = { symbol1: 'USDC', symbol2: 'WETH' };
 
 const initialState = (): LiquidityPoolState => ({
   items: [],
-  dateFilter: { hours: 12, range: [addHours(dateNow(), -12).toISOString(), new Date(dateNow()).toISOString()] },
+  dateFilter: getDateFilter(12),
   priceRange: [0, 100],
   liquiditySizeFilter: {
     max: poolSizeSteps[poolSizeSteps.length - 1].value,
@@ -40,19 +38,13 @@ const slice = createSlice({
       const { items } = payload;
       state.items = items;
       state.liquiditySizeFilter = getPoolSizeFilterOptions(items, state.tokenPair);
-      state.dateFilter.range = [
-        addHours(dateNow(), -state.dateFilter.hours).toISOString(),
-        new Date(dateNow()).toISOString(),
-      ];
+      state.dateFilter = getDateFilter(state.dateFilter.hours);
       state.priceRange = getPriceRange(items, state.tokenPair);
       state.revision = Date.now().toString();
     },
     changeDateFilter: (state, { payload }: PayloadAction<{ hours: number }>) => {
       const { hours } = payload;
-      state.dateFilter = {
-        hours: hours,
-        range: [addHours(dateNow(), -hours).toISOString(), new Date(dateNow()).toISOString()],
-      };
+      state.dateFilter = getDateFilter(hours);
     },
     setTokenPairs: (state, { payload }: PayloadAction<{ tokenPairs: TokenPair[] }>) => {
       state.tokenPairs = payload.tokenPairs;

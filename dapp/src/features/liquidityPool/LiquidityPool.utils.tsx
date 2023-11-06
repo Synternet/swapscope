@@ -1,5 +1,5 @@
-import { formatUsdCompact, isMax, isMin } from '@src/utils';
-import { isWithinInterval } from 'date-fns';
+import { dateNow, formatUsdCompact, isMax, isMin } from '@src/utils';
+import { addHours, isWithinInterval } from 'date-fns';
 import { LiquidityPoolItem, LiquiditySizeFilterOptions, TokenPair } from './types';
 
 const poolSizeValues = [0, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9];
@@ -11,13 +11,15 @@ export const poolSizeSteps = poolSizeValues.map((x) => ({
 
 export function getPoolSizeFilterOptions(list: LiquidityPoolItem[], tokenPair: TokenPair): LiquiditySizeFilterOptions {
   let max = 0;
-  list.filter(x => matchTokenPair(x, tokenPair)).forEach((item) => {
-    const totalAmount = getPoolItemTotalUsd(item);
+  list
+    .filter((x) => matchTokenPair(x, tokenPair))
+    .forEach((item) => {
+      const totalAmount = getPoolItemTotalUsd(item);
 
-    if (totalAmount > max) {
-      max = Math.ceil(totalAmount);
-    }
-  });
+      if (totalAmount > max) {
+        max = Math.ceil(totalAmount);
+      }
+    });
 
   const maxMark = poolSizeSteps.find((x) => x.value > max)!.value;
 
@@ -30,7 +32,7 @@ export function getPoolItemTotalUsd(item: LiquidityPoolItem) {
 }
 
 export function getPriceRange(list: LiquidityPoolItem[], tokenPair: TokenPair): [number, number] {
-  const filteredList = list.filter(x => matchTokenPair(x, tokenPair));
+  const filteredList = list.filter((x) => matchTokenPair(x, tokenPair));
   const min = filteredList.reduce(
     (acc, { lowerTokenRatio }) => (!isMin(lowerTokenRatio) && lowerTokenRatio < acc ? lowerTokenRatio : acc),
     Number.MAX_SAFE_INTEGER,
@@ -77,4 +79,8 @@ export function itemIsInDateRange(item: LiquidityPoolItem, dateRange: [string, s
 
 export function matchTokenPair(item: LiquidityPoolItem, tokenPair: TokenPair) {
   return item.pair[0].symbol === tokenPair.symbol1 && item.pair[1].symbol === tokenPair.symbol2;
+}
+
+export function getDateFilter(hours: number): { hours: number; range: [string, string] } {
+  return { hours: hours, range: [addHours(dateNow(), -hours).toISOString(), new Date(dateNow()).toISOString()] };
 }

@@ -1,15 +1,14 @@
-import { Message, NatsWorkerSendEvents, NatsWorkerSubscribe, NatsWorkerUnsubscribe } from '@src/modules';
+import { Message, NatsWorkerSendEvents, NatsWorkerSubscribe, NatsWorkerUnsubscribe, loadMockedMessages } from '@src/modules';
 import { createAppJwt } from '@src/modules/nats/utils';
 import { getAccessToken, isMockedApi } from '@src/utils';
 import { isEqual } from 'lodash';
-import exampleData from '../data.json';
 import { defaultTokenPair, liquidityPoolState, loadData, setLiquidityPoolItems, setTokenPairs } from '../slice';
 import { LiquidityPoolItem, TokenPair } from '../types';
 
 export function registerMessageListener(listen: ListenState) {
   listen({
     actionCreator: loadData,
-    effect: (_, api) => {
+    effect: async (_, api) => {
       const onMessages = (messages: Message[]) => {
         const newItems = messages.map((x) => {
           return { ...JSON.parse(x.data), id: x.id } as LiquidityPoolItem;
@@ -33,13 +32,7 @@ export function registerMessageListener(listen: ListenState) {
       };
 
       if (isMockedApi()) {
-        const mockedData: Message[] = exampleData.map((x, idx) => ({
-          id: idx.toString(),
-          data: JSON.stringify(x),
-          subject: 'mockedSubject',
-          timestamp: 'mockedTimestamp',
-        }));
-        onMessages(mockedData);
+        loadMockedMessages(onMessages);
       } else {
         // @TODO handle disconnect
         connectToNats({ onMessages, onError });
