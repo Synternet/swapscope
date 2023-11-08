@@ -43,7 +43,7 @@ func (s *Service) Done() context.Context {
 
 func (s *Service) publish(msg []byte, subj string) error {
 	subject := fmt.Sprintf("%s.%s", s.prefix, subj)
-	log.Println("Publishing to:", subject)
+	log.Printf("Publishing to: %s\n\n", subject)
 	return s.natsPub.Publish(s.ctx, subject, msg)
 }
 

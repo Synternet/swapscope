@@ -26,23 +26,30 @@ func (a *Analytics) isBurnEvent(evLog EventLog) bool {
 }
 
 func hasTopics(evLog EventLog) bool {
-	if len(evLog.Topics) == 0 {
-		log.Println("Log message of TX", evLog.TransactionHash, "has no topics.")
-		return false
+	for _, str := range evLog.Topics {
+		if str != "" {
+			return true
+		}
 	}
-	return true
+	log.Println("Log message of TX", evLog.TransactionHash, "has no topics.")
+	return false
 }
 
 func isOrderCorrect(position Position) bool {
 	token0 := position.Token0
 	token1 := position.Token1
-	return (token1.Symbol == "WETH" || token0.Symbol == "USDT" || token0.Symbol == "USDC")
+	return strings.EqualFold(token1.Address, addressWETH) || strings.EqualFold(token0.Address, addressUSDC) || strings.EqualFold(token0.Address, addressUSDT)
 }
 
 func isStableOrNativeInvolved(position Position) bool {
 	token0 := position.Token0
 	token1 := position.Token1
-	return (token1.Symbol == "WETH" || token0.Symbol == "USDT" || token0.Symbol == "USDC" || token0.Symbol == "WETH" || token1.Symbol == "USDT" || token1.Symbol == "USDC")
+	for _, address := range []string{addressWETH, addressUSDC, addressUSDT} {
+		if strings.EqualFold(token1.Address, address) || strings.EqualFold(token0.Address, address) {
+			return true
+		}
+	}
+	return false
 }
 
 func isEitherTokenUnknown(position Position) bool {
@@ -51,7 +58,7 @@ func isEitherTokenUnknown(position Position) bool {
 	return (strings.EqualFold(token0.Address, "") || strings.EqualFold(token1.Address, ""))
 }
 
-func isEitherTokenAmountIsZero(position Position) bool {
+func isEitherTokenAmountZero(position Position) bool {
 	token0 := position.Token0
 	token1 := position.Token1
 	return (token0.Amount == 0 || token1.Amount == 0)

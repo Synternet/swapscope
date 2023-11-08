@@ -4,19 +4,28 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-func calculatePosition(evLog EventLog, addPos Position) Position {
-	addPos.LowerTick = int(convertHexToBigInt(evLog.Topics[2]).Int64())
-	addPos.UpperTick = int(convertHexToBigInt(evLog.Topics[3]).Int64())
-
-	addPos = decodeLowerUpperTicks(addPos) // Decoding / expanding "Mint" event
-
-	if addPos.Token0.Price > 0 && addPos.Token1.Price > 0 {
-		addPos.CurrentRatio = addPos.Token1.Price / addPos.Token0.Price
+func calculatePosition(evLog EventLog, pos Position) Position {
+	if isEitherTokenUnknown(pos) {
+		return pos
 	}
 
-	addPos.TotalValue = addPos.Token1.Price*addPos.Token1.Amount + addPos.Token0.Price*addPos.Token0.Amount
+	pos.LowerTick = int(convertHexToBigInt(evLog.Topics[2]).Int64())
+	pos.UpperTick = int(convertHexToBigInt(evLog.Topics[3]).Int64())
+	pos.LowerRatio, pos.UpperRatio = calculateInterval(pos) // Decoding / expanding "Mint" event
+	pos.Token0, pos.Token1 = adjustOrder(pos)
 
-	return addPos
+	if pos.Token0.Price > 0 && pos.Token1.Price > 0 {
+		pos.CurrentRatio = pos.Token1.Price / pos.Token0.Price
+	}
+	pos.TotalValue = pos.Token1.Price*pos.Token1.Amount + pos.Token0.Price*pos.Token0.Amount
+	return pos
+}
+
+func adjustOrder(pos Position) (TokenTransaction, TokenTransaction) {
+	if isStableOrNativeInvolved(pos) && !isOrderCorrect(pos) {
+		return pos.Token1, pos.Token0
+	}
+	return pos.Token0, pos.Token1
 }
 
 // addLogToTxCache adds event log to cache.
@@ -36,19 +45,19 @@ func (a *Analytics) addLogToTxCache(eLog EventLog) error {
 	return nil
 }
 
-func decodeLowerUpperTicks(position Position) Position {
-	if isEitherTokenUnknown(position) {
-		return position
-	}
-	toReverse := false
-	position.LowerRatio, position.UpperRatio, toReverse = convertTicksToRatios(position)
+func calculateInterval(position Position) (float64, float64) {
 
-	if toReverse {
-		position.Token0, position.Token1 = position.Token1, position.Token0
+	lowerRatio := convertTickToRatio(position.LowerTick, position.Token0.Decimals, position.Token1.Decimals)
+	upperRatio := convertTickToRatio(position.UpperTick, position.Token0.Decimals, position.Token1.Decimals)
+
+	if isStableOrNativeInvolved(position) && isOrderCorrect(position) {
+		lowerRatio = 1 / lowerRatio
+		upperRatio = 1 / upperRatio
 	}
 
-	if position.LowerRatio > position.UpperRatio {
-		position.LowerRatio, position.UpperRatio = position.UpperRatio, position.LowerRatio
+	if lowerRatio > upperRatio {
+		lowerRatio, upperRatio = upperRatio, lowerRatio
 	}
-	return position
+
+	return lowerRatio, upperRatio
 }
