@@ -104,6 +104,7 @@ jobs:
       with:
         github-token: ${{ secrets.github_token }}
         output-file: "false"
+        skip-tag: "true"
 
     - name: Create Release
       uses: actions/create-release@v1
