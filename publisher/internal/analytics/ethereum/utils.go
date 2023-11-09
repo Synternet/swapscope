@@ -4,21 +4,18 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-func calculatePosition(evLog EventLog, pos Position) Position {
-	if isEitherTokenUnknown(pos) {
-		return pos
+func calculatePosition(pos *Position) {
+	if isEitherTokenUnknown(*pos) {
+		return
 	}
 
-	pos.LowerTick = int(convertHexToBigInt(evLog.Topics[2]).Int64())
-	pos.UpperTick = int(convertHexToBigInt(evLog.Topics[3]).Int64())
-	pos.LowerRatio, pos.UpperRatio = calculateInterval(pos) // Decoding / expanding "Mint" event
-	pos.Token0, pos.Token1 = adjustOrder(pos)
+	pos.LowerRatio, pos.UpperRatio = calculateInterval(*pos) // Decoding / expanding "Mint" event
+	pos.Token0, pos.Token1 = adjustOrder(*pos)
 
 	if pos.Token0.Price > 0 && pos.Token1.Price > 0 {
 		pos.CurrentRatio = pos.Token1.Price / pos.Token0.Price
 	}
 	pos.TotalValue = pos.Token1.Price*pos.Token1.Amount + pos.Token0.Price*pos.Token0.Amount
-	return pos
 }
 
 func adjustOrder(pos Position) (TokenTransaction, TokenTransaction) {
