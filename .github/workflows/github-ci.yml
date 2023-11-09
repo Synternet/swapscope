@@ -95,6 +95,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-and-push-dapp, build-and-push-publisher]
     steps:
+    - name: Check out the repo
+      uses: actions/checkout@v4
+
     - name: Conventional Changelog Action
       id: changelog
       uses: TriPSs/conventional-changelog-action@v3
@@ -104,6 +107,7 @@ jobs:
 
     - name: Create Release
       uses: actions/create-release@v1
+      if: steps.changelog.outputs.skipped != 'true'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
       with:
