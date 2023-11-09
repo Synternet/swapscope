@@ -105,9 +105,6 @@ jobs:
       uses: TriPSs/conventional-changelog-action@v4 
       with:
         github-token: ${{ secrets.github_token }}
-        output-file: "false"
-        skip-tag: "true"
-        skip-commit: "true"
 
     - name: Create Release
       uses: actions/create-release@v1
