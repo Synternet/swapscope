@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Swapscope Image Build and Release automation workflow
 
 on:
   push:
