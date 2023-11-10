@@ -108,6 +108,7 @@ jobs:
         output-file: 'CHANGELOG.md'
         skip-tag: true
         skip-git-pull: "true"
+        skip-on-empty: "false"
 
     - name: Create Release
       uses: actions/create-release@v1
