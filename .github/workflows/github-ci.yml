@@ -107,6 +107,7 @@ jobs:
         github-token: ${{ secrets.github_token }}
         output-file: 'CHANGELOG.md'
         skip-tag: true
+        skip-git-pull: "true"
 
     - name: Create Release
       uses: actions/create-release@v1
