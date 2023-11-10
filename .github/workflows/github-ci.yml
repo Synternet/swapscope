@@ -2,8 +2,6 @@ name: Docker Image CI
 
 on:
   push:
-    branches:
-      - add-release-creation-to-CI
     tags:
       - '*' 
 
@@ -99,14 +97,15 @@ jobs:
     steps:
     - name: Check out the repo
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Conventional Changelog Action
       id: changelog
       uses: TriPSs/conventional-changelog-action@v4 
       with:
         github-token: ${{ secrets.github_token }}
-        output-file: false
-        skip-on-empty: false
+        output-file: 'CHANGELOG.md'
 
     - name: Create Release
       uses: actions/create-release@v1
