@@ -25,12 +25,11 @@ func (a *Analytics) ProcessMessage(msg analytics.Message, send analytics.Sender)
 		return nil
 	}
 
-	var err error
-	operation, err = operation.Extract(eLog)
+	err := operation.Extract(eLog)
 	if err != nil {
 		log.Println("Failed to extract event from logs: ", err.Error())
 		return nil
-		//return err //TODO: if error is returned - whole service is stopped
+		//return err //TODO: currently if error is returned - whole service (goroutine) is stopped - should not be like this?
 	}
 
 	if !operation.CanPublish() {
