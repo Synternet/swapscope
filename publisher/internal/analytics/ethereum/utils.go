@@ -23,7 +23,7 @@ func (pos *Position) adjustOrder() {
 		pos.Token1, pos.Token0 = pos.Token0, pos.Token1
 	}
 }
-\
+
 // addLogToTxCache adds event log to cache.
 // Cache is grouped by transaction hashes.
 // When Mint event is met, all logs until then are recovered from cache.
