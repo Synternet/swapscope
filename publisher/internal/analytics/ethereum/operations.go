@@ -122,23 +122,6 @@ func (add Addition) Save(ts time.Time) error {
 	return add.db.SaveAddition(addition)
 }
 
-func (p Position) CanPublish() bool {
-	if strings.EqualFold(p.Token0.Symbol, "") || strings.EqualFold(p.Token1.Symbol, "") {
-		log.Printf("SKIP - token symbol unknown. Tx: %s\n\n", p.TxHash)
-		return false
-	}
-	if p.LowerRatio == 0 && p.UpperRatio == 0 {
-		log.Printf("SKIP - actual ratio not calculated. Tx: %s\n\n", p.TxHash)
-		return false
-	}
-	if p.Token0.Amount == 0 && p.Token1.Amount == 0 {
-		log.Printf("SKIP - no tokens moved. Tx: %s\n\n", p.TxHash)
-		return false
-	}
-
-	return true
-}
-
 func (rem *Removal) Extract(burn EventLog) error {
 	liqPool := burn.Address
 	addr0, addr1, found := rem.db.GetPoolPairAddresses(liqPool)
@@ -303,6 +286,100 @@ func (add Addition) Publish(timestamp time.Time) error {
 	return add.Send(additionJson, streamName)
 }
 
+// handleLiquidityTransfer decodes Transfer event.
+// Getting token that was transferred and calculating amount transferred.
+// Keeping track of tokens involved in current Liq. Add. event.
+func (add *Addition) handleLiquidityTransfer(mint EventLog, transfer EventLog) {
+	_, token0HexAmount, token1HexAmount, err := splitMintDatatoHexFields(mint.Data)
+	if err != nil {
+		log.Println("Could not split mint event into Amount fields: ", err.Error())
+	}
+
+	t, err := add.lookupToken(transfer.Address)
+	if err != nil {
+		log.Println("Failed fetching token information: ", err.Error())
+	}
+
+	if transfer.Data == token0HexAmount {
+		add.Token0.Token = t
+		add.Token0.Amount = convertTransferAmount(token0HexAmount, t.Decimals)
+	}
+
+	if transfer.Data == token1HexAmount {
+		add.Token1.Token = t
+		add.Token1.Amount = convertTransferAmount(token1HexAmount, t.Decimals)
+	}
+}
+
+// ----------------------------------------------------------------------
+// --------------- OperationBase methods
+
+func (ob OperationBase) includeTokenPrices(pos *Position) {
+	// Place here to implement price cache?
+	if !strings.EqualFold(pos.Token0.Address, "") {
+		price, err := ob.lookupPrice(pos.Token0.Address)
+		if err != nil {
+			log.Println("failed to feetch Token0 price: ", err.Error())
+		}
+		pos.Token0.Price = price.Value
+	}
+
+	if !strings.EqualFold(pos.Token1.Address, "") {
+		price, err := ob.lookupPrice(pos.Token1.Address)
+		if err != nil {
+			log.Println("failed to feetch Token1 price: ", err.Error())
+		}
+		pos.Token1.Price = price.Value
+	}
+}
+
+func (op OperationBase) lookupToken(address string) (repository.Token, error) {
+	return op.fetchers.tokenFetcher.Token(address)
+}
+
+func (op OperationBase) lookupPrice(address string) (repository.TokenPrice, error) {
+	return op.fetchers.priceFetcher.Price(address)
+}
+
+// ----------------------------------------------------------------------
+// --------------- Position methods
+
+func (pos *Position) calculateInterval() {
+
+	lowerRatio := convertTickToRatio(pos.LowerTick, pos.Token0.Decimals, pos.Token1.Decimals)
+	upperRatio := convertTickToRatio(pos.UpperTick, pos.Token0.Decimals, pos.Token1.Decimals)
+
+	if isStableOrNativeInvolved(*pos) && isOrderCorrect(*pos) {
+		lowerRatio = 1 / lowerRatio
+		upperRatio = 1 / upperRatio
+	}
+
+	if lowerRatio > upperRatio {
+		lowerRatio, upperRatio = upperRatio, lowerRatio
+	}
+	pos.LowerRatio, pos.UpperRatio = lowerRatio, upperRatio
+}
+
+func (pos *Position) calculatePosition() {
+	if isEitherTokenUnknown(*pos) {
+		return
+	}
+
+	pos.calculateInterval() // Decoding / expanding "Mint" event
+	pos.adjustOrder()
+
+	if pos.Token0.Price > 0 && pos.Token1.Price > 0 {
+		pos.CurrentRatio = pos.Token1.Price / pos.Token0.Price
+	}
+	pos.TotalValue = pos.Token1.Price*pos.Token1.Amount + pos.Token0.Price*pos.Token0.Amount
+}
+
+func (pos *Position) adjustOrder() {
+	if isStableOrNativeInvolved(*pos) && !isOrderCorrect(*pos) {
+		pos.Token1, pos.Token0 = pos.Token0, pos.Token1
+	}
+}
+
 // checkAndUpdateMissingToken expands Liq. Add. record if only 1 token was transferred
 // Second token is found and appended
 // The order of tokens is fixed based on historical results (when 2 tokens were transferred for this LP)
@@ -333,54 +410,19 @@ func (pos *Position) checkAndUpdateMissingToken(evLog EventLog, op OperationBase
 	log.Printf("Added second missing token from known pool %s", liqPoolAddress)
 }
 
-// handleLiquidityTransfer decodes Transfer event.
-// Getting token that was transferred and calculating amount transferred.
-// Keeping track of tokens involved in current Liq. Add. event.
-func (add *Addition) handleLiquidityTransfer(mint EventLog, transfer EventLog) {
-	_, token0HexAmount, token1HexAmount, err := splitMintDatatoHexFields(mint.Data)
-	if err != nil {
-		log.Println("Could not split mint event into Amount fields: ", err.Error())
+func (p Position) CanPublish() bool {
+	if strings.EqualFold(p.Token0.Symbol, "") || strings.EqualFold(p.Token1.Symbol, "") {
+		log.Printf("SKIP - token symbol unknown. Tx: %s\n\n", p.TxHash)
+		return false
+	}
+	if p.LowerRatio == 0 && p.UpperRatio == 0 {
+		log.Printf("SKIP - actual ratio not calculated. Tx: %s\n\n", p.TxHash)
+		return false
+	}
+	if p.Token0.Amount == 0 && p.Token1.Amount == 0 {
+		log.Printf("SKIP - no tokens moved. Tx: %s\n\n", p.TxHash)
+		return false
 	}
 
-	t, err := add.lookupToken(transfer.Address)
-	if err != nil {
-		log.Println("Failed fetching token information: ", err.Error())
-	}
-
-	if transfer.Data == token0HexAmount {
-		add.Token0.Token = t
-		add.Token0.Amount = convertTransferAmount(token0HexAmount, t.Decimals)
-	}
-
-	if transfer.Data == token1HexAmount {
-		add.Token1.Token = t
-		add.Token1.Amount = convertTransferAmount(token1HexAmount, t.Decimals)
-	}
-}
-
-func (ob OperationBase) includeTokenPrices(pos *Position) {
-	// Place here to implement price cache?
-	if !strings.EqualFold(pos.Token0.Address, "") {
-		price, err := ob.lookupPrice(pos.Token0.Address)
-		if err != nil {
-			log.Println("failed to feetch Token0 price: ", err.Error())
-		}
-		pos.Token0.Price = price.Value
-	}
-
-	if !strings.EqualFold(pos.Token1.Address, "") {
-		price, err := ob.lookupPrice(pos.Token1.Address)
-		if err != nil {
-			log.Println("failed to feetch Token1 price: ", err.Error())
-		}
-		pos.Token1.Price = price.Value
-	}
-}
-
-func (op OperationBase) lookupToken(address string) (repository.Token, error) {
-	return op.fetchers.tokenFetcher.Token(address)
-}
-
-func (op OperationBase) lookupPrice(address string) (repository.TokenPrice, error) {
-	return op.fetchers.priceFetcher.Price(address)
+	return true
 }
