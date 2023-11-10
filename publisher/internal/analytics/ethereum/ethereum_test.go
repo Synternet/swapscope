@@ -24,24 +24,26 @@ const tolerance = 1e-10
 func Test_tickConversion(t *testing.T) {
 	tests := []struct {
 		name           string
-		input          Position
+		input          *Position
 		trueLowerRatio float64
 		trueUpperRatio float64
 	}{
-		{"Custom/native: Ticks > 0, res ratio < 1, low range", Position{Token0: knownTokens["WBTC"], Token1: knownTokens["WETH"], LowerTick: 259720, UpperTick: 259750}, 0.052452336044, 0.052609921433}, // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/591227
-		{"Custom/native: Ticks > 0, res ratio < 1, big range", Position{Token0: knownTokens["WBTC"], Token1: knownTokens["WETH"], LowerTick: 258310, UpperTick: 259930}, 0.051516686880, 0.060575933233}, //
-		{"Custom/native: Ticks < 0, low range", Position{Token0: knownTokens["MATIC"], Token1: knownTokens["WETH"], LowerTick: -79980, UpperTick: -79500}, 2834.4481085213397, 2973.812642817363},        // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/587211
-		{"Custom/native: Ticks < 0, big range", Position{Token0: knownTokens["MATIC"], Token1: knownTokens["WETH"], LowerTick: -90240, UpperTick: -78420}, 2544.292581085861, 8296.166586725507},         // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/587556
-		{"Stable/native: Ticks > 0, big range", Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"], LowerTick: 186220, UpperTick: 201460}, 1782.956728761764, 8184.129686609503},          // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593545
-		{"Stable/native: Ticks > 0, big range", Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"], LowerTick: 201450, UpperTick: 203190}, 1499.724941901797, 1784.7404880350452},         // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593547
-		{"Stable/native: Ticks > 0, low range", Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"], LowerTick: 201090, UpperTick: 201650}, 1749.4020078533288, 1850.158331324582},         // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593603
-		{"Native/stable: Ticks < 0, big range", Position{Token0: knownTokens["WETH"], Token1: knownTokens["USDT"], LowerTick: -204660, UpperTick: -197760}, 1294.7130255963305, 2581.2004232087493},      // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593557
-		{"Native/stable: Ticks < 0, low range", Position{Token0: knownTokens["WETH"], Token1: knownTokens["USDT"], LowerTick: -201480, UpperTick: -201470}, 1779.3945567691965, 1781.1747522670805},      // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593392
+		{"Custom/native: Ticks > 0, res ratio < 1, low range", &Position{Token0: knownTokens["WBTC"], Token1: knownTokens["WETH"], LowerTick: 259720, UpperTick: 259750}, 0.052452336044, 0.052609921433}, // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/591227
+		{"Custom/native: Ticks > 0, res ratio < 1, big range", &Position{Token0: knownTokens["WBTC"], Token1: knownTokens["WETH"], LowerTick: 258310, UpperTick: 259930}, 0.051516686880, 0.060575933233}, //
+		{"Custom/native: Ticks < 0, low range", &Position{Token0: knownTokens["MATIC"], Token1: knownTokens["WETH"], LowerTick: -79980, UpperTick: -79500}, 2834.4481085213397, 2973.812642817363},        // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/587211
+		{"Custom/native: Ticks < 0, big range", &Position{Token0: knownTokens["MATIC"], Token1: knownTokens["WETH"], LowerTick: -90240, UpperTick: -78420}, 2544.292581085861, 8296.166586725507},         // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/587556
+		{"Stable/native: Ticks > 0, big range", &Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"], LowerTick: 186220, UpperTick: 201460}, 1782.956728761764, 8184.129686609503},          // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593545
+		{"Stable/native: Ticks > 0, big range", &Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"], LowerTick: 201450, UpperTick: 203190}, 1499.724941901797, 1784.7404880350452},         // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593547
+		{"Stable/native: Ticks > 0, low range", &Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"], LowerTick: 201090, UpperTick: 201650}, 1749.4020078533288, 1850.158331324582},         // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593603
+		{"Native/stable: Ticks < 0, big range", &Position{Token0: knownTokens["WETH"], Token1: knownTokens["USDT"], LowerTick: -204660, UpperTick: -197760}, 1294.7130255963305, 2581.2004232087493},      // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593557
+		{"Native/stable: Ticks < 0, low range", &Position{Token0: knownTokens["WETH"], Token1: knownTokens["USDT"], LowerTick: -201480, UpperTick: -201470}, 1779.3945567691965, 1781.1747522670805},      // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593392
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			resLowerRatio, resUpperRatio := calculateInterval(test.input)
+			test.input.calculateInterval()
+			resLowerRatio := test.input.LowerRatio
+			resUpperRatio := test.input.UpperRatio
 			if math.Abs(resLowerRatio-test.trueLowerRatio)*1.0 > tolerance ||
 				math.Abs(resUpperRatio-test.trueUpperRatio)*1.0 > tolerance {
 				t.Errorf("convertTicksToRatios(%v) = (%v,%v); expected (%v,%v)",

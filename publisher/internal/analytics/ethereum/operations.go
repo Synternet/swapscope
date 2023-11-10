@@ -156,6 +156,7 @@ func (rem *Removal) Extract(burn EventLog) error {
 		return err
 	}
 
+	//TODO: Create a 'position initialization' function
 	remPosition := &Position{
 		Address:   burn.Address,
 		TxHash:    burn.TransactionHash,
@@ -173,7 +174,7 @@ func (rem *Removal) Extract(burn EventLog) error {
 	rem.Position = *remPosition
 
 	rem.OperationBase.includeTokenPrices(&rem.Position) // 6) Getting token prices
-	calculatePosition(&rem.Position)                    // 7) Save Liquidity Entry and Liquidity Pool
+	rem.Position.calculatePosition()                    // 7) Save Liquidity Entry and Liquidity Pool
 
 	return nil
 }
@@ -185,6 +186,7 @@ func (add *Addition) Extract(mint EventLog) error {
 
 	txEventsFromCache, _ := add.cache.Get(mint.TransactionHash)
 
+	//TODO: Create a 'position initialization' function
 	addPosition := &Position{
 		Address:   mint.Address,
 		TxHash:    mint.TransactionHash,
@@ -208,7 +210,7 @@ func (add *Addition) Extract(mint EventLog) error {
 	}
 
 	add.OperationBase.includeTokenPrices(&add.Position) // 6) Getting token prices
-	calculatePosition(&add.Position)                    // 7) Save Liquidity Entry and Liquidity Pool
+	add.Position.calculatePosition()                    // 7) Save Liquidity Entry and Liquidity Pool
 
 	return nil
 }
