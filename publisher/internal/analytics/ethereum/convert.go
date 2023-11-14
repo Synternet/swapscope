@@ -49,13 +49,26 @@ func convertTickToRatio(tick, token0Decimal, token1Decimal int) float64 {
 	return math.Pow(1.0001, float64(tick)) / math.Pow(10, float64(token1Decimal-token0Decimal))
 }
 
-func parseEventLogMessage(data []byte) EventLog {
-	var eLog EventLog
-	err := json.Unmarshal(data, &eLog)
+func parseEventLogMessage(data []byte) (WrappedEventLog, error) {
+	var eLog WrappedEventLog
+	err := json.Unmarshal(data, &eLog.Data)
 	if err != nil {
-		log.Println("--- ERROR: Encountered an error when unmarshaling EventLog:", err)
+		return WrappedEventLog{}, err
 	}
-	return eLog
+
+	if !eLog.hasTopics() {
+		return WrappedEventLog{}, fmt.Errorf("parsed event log has no topics.")
+	}
+
+	// Assign appropriate instructions
+	for prefix, instruct := range eventInstructions {
+		if strings.HasPrefix(eLog.Data.Topics[0], prefix) {
+			eLog.Instructions = instruct
+			break
+		}
+	}
+
+	return eLog, nil
 }
 
 // convertTransferAmount converts Transfer's hex amount into scaled actual amount of tokens

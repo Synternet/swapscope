@@ -43,6 +43,7 @@ type Operation interface {
 	CanPublish() bool
 	Publish(time.Time) error
 	Save(time.Time) error
+	InitializeOperation(Database, *cache.Cache, *Analytics, analytics.Sender)
 }
 
 type Removal struct {
@@ -60,32 +61,28 @@ type Addition struct {
 	Send analytics.Sender
 }
 
-func NewAdditionOperation(db Database, cache *cache.Cache, a *Analytics, sender analytics.Sender) *Addition {
-	return &Addition{
-		OperationBase: OperationBase{
-			db:    db,
-			cache: cache,
-			fetchers: Fetchers{
-				priceFetcher: a.priceFetcher,
-				tokenFetcher: a.tokenFetcher,
-			},
+func (rem *Removal) InitializeOperation(db Database, cache *cache.Cache, a *Analytics, sender analytics.Sender) {
+	rem.OperationBase = OperationBase{
+		db:    db,
+		cache: cache,
+		fetchers: Fetchers{
+			priceFetcher: a.priceFetcher,
+			tokenFetcher: a.tokenFetcher,
 		},
-		Send: sender,
 	}
+	rem.Send = sender
 }
 
-func NewRemovalOperation(db Database, cache *cache.Cache, a *Analytics, sender analytics.Sender) *Removal {
-	return &Removal{
-		OperationBase: OperationBase{
-			db:    db,
-			cache: cache,
-			fetchers: Fetchers{
-				priceFetcher: a.priceFetcher,
-				tokenFetcher: a.tokenFetcher,
-			},
+func (add *Addition) InitializeOperation(db Database, cache *cache.Cache, a *Analytics, sender analytics.Sender) {
+	add.OperationBase = OperationBase{
+		db:    db,
+		cache: cache,
+		fetchers: Fetchers{
+			priceFetcher: a.priceFetcher,
+			tokenFetcher: a.tokenFetcher,
 		},
-		Send: sender,
 	}
+	add.Send = sender
 }
 
 func (rem Removal) Save(ts time.Time) error {

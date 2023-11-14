@@ -34,3 +34,25 @@ type TokenTransaction struct {
 	Amount float64
 	Price  float64
 }
+
+type EventInstruction struct {
+	Name      string
+	Header    string
+	Signature string
+	PublishTo string
+	Operation
+}
+
+type WrappedEventLog struct {
+	Data         EventLog
+	Instructions EventInstruction
+}
+
+func (wel *WrappedEventLog) hasTopics() bool {
+	for _, str := range wel.Data.Topics {
+		if str != "" {
+			return true
+		}
+	}
+	return false
+}

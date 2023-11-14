@@ -7,25 +7,23 @@ import (
 )
 
 func (a *Analytics) ProcessMessage(msg analytics.Message, send analytics.Sender) error {
-	eLog := parseEventLogMessage(msg.Data)
+	eLog, err := parseEventLogMessage(msg.Data)
 
-	if !hasTopics(eLog) {
+	if err != nil {
+		log.Println("Failed to parse event log from message: ", err.Error())
 		return nil
 	}
 
-	a.addLogToTxCache(eLog) //All events are put into cache
+	a.addLogToTxCache(eLog.Data) // All events are put into cache
 
-	var operation Operation
-	switch {
-	case a.isBurnEvent(eLog):
-		operation = NewRemovalOperation(a.db, a.eventLogCache, a, send)
-	case a.isMintEvent(eLog):
-		operation = NewAdditionOperation(a.db, a.eventLogCache, a, send)
-	default:
+	if eLog.Instructions.Operation == nil { // There is no way to turn this log into an operation - processing is done
 		return nil
 	}
 
-	err := operation.Extract(eLog)
+	operation := eLog.Instructions.Operation                      // Set to correct type
+	operation.InitializeOperation(a.db, a.eventLogCache, a, send) // Initialize with operation base (db, cache, fetchers) and send function
+
+	err = operation.Extract(eLog.Data)
 	if err != nil {
 		log.Println("Failed to extract event from logs: ", err.Error())
 		return nil
@@ -36,7 +34,7 @@ func (a *Analytics) ProcessMessage(msg analytics.Message, send analytics.Sender)
 		return nil
 	}
 
-	log.Println("Tx hash:", eLog.TransactionHash)
+	log.Println("Tx hash:", eLog.Data.TransactionHash)
 	log.Println("Operation processed:", operation.String())
 
 	//return operation.Save(msg.Timestamp) // Option to save additions and removals to DB

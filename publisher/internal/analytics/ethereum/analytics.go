@@ -10,9 +10,13 @@ import (
 )
 
 var (
-	mintSig     string
-	transferSig string
-	burnSig     string
+	mintSig           string
+	transferSig       string
+	burnSig           string
+	addEvent          EventInstruction
+	transferEvent     EventInstruction
+	burnEvent         EventInstruction
+	eventInstructions = make(map[string]EventInstruction)
 )
 
 const (
@@ -38,6 +42,35 @@ func init() {
 	mintSig = convertToEventSignature(mintEventHeader)
 	transferSig = convertToEventSignature(transferEventHeader)
 	burnSig = convertToEventSignature(burnEventHeader)
+
+	transferEvent = EventInstruction{
+		Name:      "TRANSFER",
+		Header:    transferEventHeader,
+		Signature: transferSig,
+		Operation: nil,
+		PublishTo: "",
+	}
+
+	addEvent = EventInstruction{
+		Name:      "ADDITION",
+		Header:    mintEventHeader,
+		Signature: mintSig,
+		Operation: &Addition{},
+		PublishTo: "add",
+	}
+
+	burnEvent = EventInstruction{
+		Name:      "REMOVAL",
+		Header:    burnEventHeader,
+		Signature: burnSig,
+		Operation: &Removal{},
+		PublishTo: "remove",
+	}
+
+	eventInstructions[transferSig] = transferEvent
+	eventInstructions[mintSig] = addEvent
+	eventInstructions[burnSig] = burnEvent
+
 }
 
 func New(ctx context.Context, db repository.Repository, opts ...Option) (*Analytics, error) {
