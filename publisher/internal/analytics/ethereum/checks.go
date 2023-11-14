@@ -1,7 +1,6 @@
 package ethereum
 
 import (
-	"log"
 	"strings"
 )
 
@@ -10,28 +9,6 @@ func isUniswapPositionsNFT(address string) bool {
 	if strings.Contains(address, strings.ToLower(uniswapPositionsOwner)[2:]) {
 		return true
 	}
-	return false
-}
-
-func isTransferEvent(evLog EventLog) bool {
-	return strings.HasPrefix(evLog.Topics[0], transferSig)
-}
-
-func (a *Analytics) isMintEvent(evLog EventLog) bool {
-	return strings.HasPrefix(evLog.Topics[0], mintSig)
-}
-
-func (a *Analytics) isBurnEvent(evLog EventLog) bool {
-	return strings.HasPrefix(evLog.Topics[0], burnSig)
-}
-
-func hasTopics(evLog EventLog) bool {
-	for _, str := range evLog.Topics {
-		if str != "" {
-			return true
-		}
-	}
-	log.Println("Log message of TX", evLog.TransactionHash, "has no topics.")
 	return false
 }
 

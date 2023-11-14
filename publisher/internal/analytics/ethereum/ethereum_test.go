@@ -147,88 +147,20 @@ func Test_isUniswapPositionsNFT(t *testing.T) {
 	}
 }
 
-func Test_isTransferEvent(t *testing.T) {
-	tests := []struct {
-		name          string
-		inputEventLog EventLog
-		trueRes       bool
-	}{
-		{"Topic with Transfer sig", EventLog{Topics: []string{"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}}, true},
-		{"Topic with other sig", EventLog{Topics: []string{"0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c"}}, false},
-		{"Transfer sig", EventLog{Topics: []string{"0xddf252ad1be2c89"}}, true},
-		{"Other sig", EventLog{Topics: []string{"0xddf252"}}, false},
-		{"Empty string", EventLog{Topics: []string{""}}, false},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			res := isTransferEvent(test.inputEventLog)
-			if res != test.trueRes {
-				t.Errorf("isTransferEvent(%v) = (%v); expected (%v)", test.inputEventLog, res, test.trueRes)
-			}
-		})
-	}
-}
-
-func Test_isMintEvent(t *testing.T) {
-	tests := []struct {
-		name          string
-		inputEventLog EventLog
-		trueRes       bool
-	}{
-		{"Topic with other sig", EventLog{Topics: []string{"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}}, false},
-		{"Topic with Mint sig", EventLog{Topics: []string{"0x7a53080ba414158be7ec69b987b5fb7d07dee101fe85488f0853ae16239d0bde"}}, true},
-		{"Mint sig", EventLog{Topics: []string{"0x7a53080ba414158"}}, true},
-		{"Other sig", EventLog{Topics: []string{"0x7a53"}}, false},
-		{"Empty string", EventLog{Topics: []string{""}}, false},
-	}
-	a := Analytics{}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			res := a.isMintEvent(test.inputEventLog)
-			if res != test.trueRes {
-				t.Errorf("isMintEvent(%v) = (%v); expected (%v)", test.inputEventLog, res, test.trueRes)
-			}
-		})
-	}
-}
-
-func Test_isBurnEvent(t *testing.T) {
-	tests := []struct {
-		name          string
-		inputEventLog EventLog
-		trueRes       bool
-	}{
-		{"Topic with other sig", EventLog{Topics: []string{"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}}, false},
-		{"Topic with Burn sig", EventLog{Topics: []string{"0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c"}}, true},
-		{"Burn sig", EventLog{Topics: []string{"0x0c396cd989a39f4"}}, true},
-		{"Other sig", EventLog{Topics: []string{"0x0c396c"}}, false},
-		{"Empty string", EventLog{Topics: []string{""}}, false},
-	}
-	a := Analytics{}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			res := a.isBurnEvent(test.inputEventLog)
-			if res != test.trueRes {
-				t.Errorf("isBurnEvent(%v) = (%v); expected (%v)", test.inputEventLog, res, test.trueRes)
-			}
-		})
-	}
-}
-
 func Test_hasTopics(t *testing.T) {
 	tests := []struct {
 		name          string
-		inputEventLog EventLog
+		inputEventLog WrappedEventLog
 		trueRes       bool
 	}{
-		{"1 topic", EventLog{Topics: []string{"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}}, true},
-		{"3 topics", EventLog{Topics: []string{"0x0c396c", "0x0c396cd989a39f4", "0x0c396cd989a30c396c9f4"}}, true},
-		{"1 empty topic", EventLog{Topics: []string{""}}, false},
-		{"No topics", EventLog{Topics: []string{}}, false},
+		{"1 topic", WrappedEventLog{Data: EventLog{Topics: []string{"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}}}, true},
+		{"3 topics", WrappedEventLog{Data: EventLog{Topics: []string{"0x0c396c", "0x0c396cd989a39f4", "0x0c396cd989a30c396c9f4"}}}, true},
+		{"1 empty topic", WrappedEventLog{Data: EventLog{Topics: []string{""}}}, false},
+		{"No topics", WrappedEventLog{Data: EventLog{Topics: []string{}}}, false},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res := hasTopics(test.inputEventLog)
+			res := test.inputEventLog.hasTopics()
 			if res != test.trueRes {
 				t.Errorf("hasTopics(%v) = (%v); expected (%v)", test.inputEventLog, res, test.trueRes)
 			}
