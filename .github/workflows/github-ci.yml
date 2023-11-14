@@ -97,13 +97,19 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+    
+    - name: Create package.json with latest tag
+      run: |
+        latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+        echo "Latest tag is $latest_tag"
+        echo "{\"version\": \"${latest_tag#v}\"}" > package.json
 
     - name: Conventional Changelog Action
       id: changelog
       uses: TriPSs/conventional-changelog-action@v4 
       with:
         github-token: ${{ secrets.github_token }}
-        output-file: 'CHANGELOG.md'
+        output-file: 'false'
         skip-tag: true
         skip-git-pull: "true"
         skip-on-empty: "false"
