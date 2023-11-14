@@ -103,6 +103,7 @@ jobs:
         latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
         echo "Latest tag is $latest_tag"
         echo "{\"version\": \"${latest_tag#v}\"}" > package.json
+        echo "LATEST_TAG=${latest_tag}" >> $GITHUB_ENV
 
     - name: Conventional Changelog Action
       id: changelog
@@ -122,8 +123,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
       with:
-        tag_name: ${{ steps.changelog.outputs.tag }}
-        release_name: ${{ steps.changelog.outputs.tag }}
+        tag_name: ${{ env.LATEST_TAG }}
+        release_name: ${{ env.LATEST_TAG }}
         body: ${{ steps.changelog.outputs.clean_changelog }}
         draft: false
         prerelease: false
