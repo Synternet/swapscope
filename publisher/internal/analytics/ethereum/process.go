@@ -14,7 +14,7 @@ func (a *Analytics) ProcessMessage(msg analytics.Message, send analytics.Sender)
 		return nil
 	}
 
-	a.addLogToTxCache(eLog.Data) // All events are put into cache
+	a.addLogToTxCache(eLog) // All events are put into cache
 
 	if eLog.Instructions.Operation == nil { // There is no way to turn this log into an operation - processing is done
 		return nil

@@ -41,7 +41,7 @@ func Test_tickConversion(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			test.input.calculateInterval()
+			test.input.calculate()
 			resLowerRatio := test.input.LowerRatio
 			resUpperRatio := test.input.UpperRatio
 			if math.Abs(resLowerRatio-test.trueLowerRatio)*1.0 > tolerance ||

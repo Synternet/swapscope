@@ -60,8 +60,8 @@ func parseEventLogMessage(data []byte) (WrappedEventLog, error) {
 		return WrappedEventLog{}, fmt.Errorf("parsed event log has no topics.")
 	}
 
-	// Assign appropriate instructions
-	for prefix, instruct := range eventInstructions {
+	eLog.Instructions = otherEvent                    // Default instructions
+	for prefix, instruct := range eventInstructions { // Assign appropriate instructions
 		if strings.HasPrefix(eLog.Data.Topics[0], prefix) {
 			eLog.Instructions = instruct
 			break

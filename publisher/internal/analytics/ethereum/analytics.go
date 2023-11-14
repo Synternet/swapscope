@@ -16,6 +16,7 @@ var (
 	addEvent          EventInstruction
 	transferEvent     EventInstruction
 	burnEvent         EventInstruction
+	otherEvent        EventInstruction
 	eventInstructions = make(map[string]EventInstruction)
 )
 
@@ -35,7 +36,12 @@ type Analytics struct {
 	db  repository.Repository
 	ctx context.Context
 
-	eventLogCache *cache.Cache
+	eventLogCache *EventLogCache
+}
+
+type CacheRecord map[string]interface{}
+type EventLogCache struct {
+	*cache.Cache
 }
 
 func init() {
@@ -67,6 +73,10 @@ func init() {
 		PublishTo: "remove",
 	}
 
+	otherEvent = EventInstruction{
+		Name: "OTHER",
+	}
+
 	eventInstructions[transferSig] = transferEvent
 	eventInstructions[mintSig] = addEvent
 	eventInstructions[burnSig] = burnEvent
@@ -89,7 +99,7 @@ func New(ctx context.Context, db repository.Repository, opts ...Option) (*Analyt
 		return nil, errors.New("token fetcher must be set")
 	}
 
-	ret.eventLogCache = cache.New(ret.Options.eventLogCacheExpirationTime, ret.Options.eventLogCachePurgeTime)
+	ret.eventLogCache = &EventLogCache{cache.New(ret.Options.eventLogCacheExpirationTime, ret.Options.eventLogCachePurgeTime)}
 
 	return ret, nil
 }

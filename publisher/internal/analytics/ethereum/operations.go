@@ -10,7 +10,6 @@ import (
 	"github.com/SyntropyNet/swapscope/publisher/pkg/analytics"
 	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
 	"github.com/SyntropyNet/swapscope/publisher/pkg/types"
-	"github.com/patrickmn/go-cache"
 )
 
 type Fetchers struct {
@@ -33,7 +32,7 @@ type Database interface {
 }
 
 type Cache interface {
-	Get(string) (interface{}, bool)
+	GetByTxHashAndLogType(string, string) ([]EventLog, error)
 }
 
 type Operation interface {
@@ -43,7 +42,7 @@ type Operation interface {
 	CanPublish() bool
 	Publish(time.Time) error
 	Save(time.Time) error
-	InitializeOperation(Database, *cache.Cache, *Analytics, analytics.Sender)
+	InitializeOperation(Database, *EventLogCache, *Analytics, analytics.Sender)
 }
 
 type Removal struct {
@@ -61,7 +60,7 @@ type Addition struct {
 	Send analytics.Sender
 }
 
-func (rem *Removal) InitializeOperation(db Database, cache *cache.Cache, a *Analytics, sender analytics.Sender) {
+func (rem *Removal) InitializeOperation(db Database, cache *EventLogCache, a *Analytics, sender analytics.Sender) {
 	rem.OperationBase = OperationBase{
 		db:    db,
 		cache: cache,
@@ -73,7 +72,7 @@ func (rem *Removal) InitializeOperation(db Database, cache *cache.Cache, a *Anal
 	rem.Send = sender
 }
 
-func (add *Addition) InitializeOperation(db Database, cache *cache.Cache, a *Analytics, sender analytics.Sender) {
+func (add *Addition) InitializeOperation(db Database, cache *EventLogCache, a *Analytics, sender analytics.Sender) {
 	add.OperationBase = OperationBase{
 		db:    db,
 		cache: cache,
@@ -163,9 +162,6 @@ func (add *Addition) Extract(mint EventLog) error {
 	if !isUniswapPositionsNFT(mint.Data) {
 		return fmt.Errorf("not Uniswap Positions NFT.\n")
 	}
-
-	txEventsFromCache, _ := add.cache.Get(mint.TransactionHash)
-
 	//TODO: Create a 'position initialization' function
 	addPosition := &Position{
 		Address:   mint.Address,
@@ -175,16 +171,19 @@ func (add *Addition) Extract(mint EventLog) error {
 	}
 	add.Position = *addPosition
 
-	for _, evLog := range txEventsFromCache.([]EventLog) { // Go through all events of this transaction
-		if isTransferEvent(evLog) && !isUniswapPositionsNFT(evLog.Address) {
-			add.handleLiquidityTransfer(mint, evLog)
-		}
+	transferLogs, err := add.cache.GetByTxHashAndLogType(mint.TransactionHash, eventInstructions[transferSig].Name)
+	if err != nil {
+		return err
+	}
+	for _, transferLog := range transferLogs { // Go through all transfers of this transaction
+		add.handleLiquidityTransfer(mint, transferLog)
 	}
 
-	if isEitherTokenUnknown(*addPosition) {
+	if isEitherTokenUnknown(add.Position) {
 		add.Position.checkAndUpdateMissingToken(mint, add.OperationBase) // 5) Adding missing token if only 1 token transfer was made
 	}
-	err := add.savePool(*addPosition)
+	
+	err = add.savePool(add.Position)
 	if err != nil {
 		log.Println("error while adding new pool to database:", err.Error())
 	}
@@ -341,7 +340,7 @@ func (op OperationBase) lookupPrice(address string) (repository.TokenPrice, erro
 // ----------------------------------------------------------------------
 // --------------- Position methods
 
-func (pos *Position) calculateInterval() {
+func (pos *Position) calculate() {
 
 	lowerRatio := convertTickToRatio(pos.LowerTick, pos.Token0.Decimals, pos.Token1.Decimals)
 	upperRatio := convertTickToRatio(pos.UpperTick, pos.Token0.Decimals, pos.Token1.Decimals)
@@ -362,7 +361,7 @@ func (pos *Position) calculatePosition() {
 		return
 	}
 
-	pos.calculateInterval() // Decoding / expanding "Mint" event
+	pos.calculate() // Decoding / expanding "Mint" event
 	pos.adjustOrder()
 
 	if pos.Token0.Price > 0 && pos.Token1.Price > 0 {
