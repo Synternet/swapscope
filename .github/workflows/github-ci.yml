@@ -114,6 +114,7 @@ jobs:
         skip-git-pull: "true"
         skip-on-empty: "false"
         git-push: "false"
+        skip-version-file: "true"
 
     - name: Create Release
       uses: actions/create-release@v1
