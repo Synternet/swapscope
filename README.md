@@ -2,7 +2,6 @@
 [![Latest release](https://img.shields.io/github/v/release/SyntropyNet/swapscope)](https://github.com/SyntropyNet/swapscope/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/SyntropyNet/swapscope/github-ci.yml?label=github-ci)](https://github.com/SyntropyNet/swapscope/actions/workflows/github-ci.yml)
-[![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/SyntropyNet/swapscope/docker-image.yml?label=docker-image)](https://github.com/SyntropyNet/swapscope/actions/workflows/docker-image.yml)
 
 Swapscope is an open-source project that simplifies the process of streaming real-time Ethereum Uniswap (for now) liquidity operations (additions and removals) data. The project consists of two main components: the DApp (frontend) and the publisher (backend). 
 Swapscope's publisher utilizes [Syntropy Data Layer's (DL)](https://www.syntropynet.com/post/presenting-the-new-vision) Ethereum event log stream, processes the data, and publishes it back to Syntropy DL which frontend also utilizes to display the processed data.
