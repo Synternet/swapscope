@@ -40,7 +40,7 @@ type Operation interface {
 	Extract(EventLog) error
 	String() string
 	CanPublish() bool
-	Publish(time.Time) error
+	Publish(string, time.Time) error
 	Save(time.Time) error
 	InitializeOperation(Database, *EventLogCache, *Analytics, analytics.Sender)
 }
@@ -182,7 +182,7 @@ func (add *Addition) Extract(mint EventLog) error {
 	if isEitherTokenUnknown(add.Position) {
 		add.Position.checkAndUpdateMissingToken(mint, add.OperationBase) // 5) Adding missing token if only 1 token transfer was made
 	}
-	
+
 	err = add.savePool(add.Position)
 	if err != nil {
 		log.Println("error while adding new pool to database:", err.Error())
@@ -234,7 +234,7 @@ func (add Addition) String() string {
 		add.CurrentRatio)
 }
 
-func (rem Removal) Publish(timestamp time.Time) error {
+func (rem Removal) Publish(publishTo string, timestamp time.Time) error {
 	removalMessage := types.RemovalMessage{
 		Timestamp:         timestamp,
 		Address:           rem.Address,
@@ -254,11 +254,11 @@ func (rem Removal) Publish(timestamp time.Time) error {
 		return fmt.Errorf("error marshalling Liquidity Removal object into a json message: %s", err)
 	}
 
-	streamName := strings.ToLower(fmt.Sprintf("remove.%s.%s", rem.Token0.Symbol, rem.Token1.Symbol))
+	streamName := strings.ToLower(fmt.Sprintf("%s.%s.%s", publishTo, rem.Token0.Symbol, rem.Token1.Symbol))
 	return rem.Send(removalJson, streamName)
 }
 
-func (add Addition) Publish(timestamp time.Time) error {
+func (add Addition) Publish(publishTo string, timestamp time.Time) error {
 	additionMessage := types.AdditionMessage{
 		Timestamp:         timestamp,
 		Address:           add.Address,
@@ -278,7 +278,7 @@ func (add Addition) Publish(timestamp time.Time) error {
 		return fmt.Errorf("error marshalling Liquidity Addition object into a json message: %s", err)
 	}
 
-	streamName := strings.ToLower(fmt.Sprintf("add.%s.%s", add.Token0.Symbol, add.Token1.Symbol))
+	streamName := strings.ToLower(fmt.Sprintf("%s.%s.%s", publishTo, add.Token0.Symbol, add.Token1.Symbol))
 	return add.Send(additionJson, streamName)
 }
 

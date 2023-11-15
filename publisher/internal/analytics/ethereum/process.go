@@ -38,5 +38,5 @@ func (a *Analytics) ProcessMessage(msg analytics.Message, send analytics.Sender)
 	log.Println("Operation processed:", operation.String())
 
 	//return operation.Save(msg.Timestamp) // Option to save additions and removals to DB
-	return operation.Publish(msg.Timestamp)
+	return operation.Publish(eLog.Instructions.PublishTo, msg.Timestamp)
 }
