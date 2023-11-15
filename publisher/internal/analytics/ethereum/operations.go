@@ -378,13 +378,13 @@ func (pos *Position) adjustOrder() {
 
 // checkAndUpdateMissingToken expands Liq. Add. record if only 1 token was transferred
 // Second token is found and appended
-// The order of tokens is fixed based on historical results (when 2 tokens were transferred for this LP)
 func (pos *Position) checkAndUpdateMissingToken(evLog EventLog, op OperationBase) {
 	liqPoolAddress := strings.ToLower(evLog.Address)
 
 	tok0Address, tok1Address, foundPool := op.db.GetPoolPairAddresses(liqPoolAddress)
 	if !foundPool {
-		log.Println("Could not get token information of pool", liqPoolAddress)
+		log.Println("(at least 1 token is completely unknown) Could not get token information of pool", liqPoolAddress)
+		return
 	}
 
 	if pos.Token0.Token == (repository.Token{}) {
