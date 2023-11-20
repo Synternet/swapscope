@@ -150,13 +150,13 @@ func Test_isUniswapPositionsNFT(t *testing.T) {
 func Test_hasTopics(t *testing.T) {
 	tests := []struct {
 		name          string
-		inputEventLog WrappedEventLog
+		inputEventLog EventLog
 		trueRes       bool
 	}{
-		{"1 topic", WrappedEventLog{Log: EventLog{Topics: []string{"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}}}, true},
-		{"3 topics", WrappedEventLog{Log: EventLog{Topics: []string{"0x0c396c", "0x0c396cd989a39f4", "0x0c396cd989a30c396c9f4"}}}, true},
-		{"1 empty topic", WrappedEventLog{Log: EventLog{Topics: []string{""}}}, false},
-		{"No topics", WrappedEventLog{Log: EventLog{Topics: []string{}}}, false},
+		{"1 topic", EventLog{Topics: []string{"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}}, true},
+		{"3 topics", EventLog{Topics: []string{"0x0c396c", "0x0c396cd989a39f4", "0x0c396cd989a30c396c9f4"}}, true},
+		{"1 empty topic", EventLog{Topics: []string{""}}, false},
+		{"No topics", EventLog{Topics: []string{}}, false},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -185,7 +185,7 @@ func Test_isOrderCorrect(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res := isOrderCorrect(test.input)
+			res := test.input.isOrderCorrect()
 			if res != test.trueRes {
 				t.Errorf("isOrderCorrect(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
 			}
@@ -256,7 +256,7 @@ func Test_isEitherTokenAmountIsZero(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res := isEitherTokenAmountZero(test.input)
+			res := test.input.isEitherTokenAmountZero()
 			if res != test.trueRes {
 				t.Errorf("isEitherTokenAmountIsZero(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
 			}

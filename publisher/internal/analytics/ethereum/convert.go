@@ -49,19 +49,17 @@ func convertTickToRatio(tick, token0Decimal, token1Decimal int) float64 {
 	return math.Pow(1.0001, float64(tick)) / math.Pow(10, float64(token1Decimal-token0Decimal))
 }
 
-func parseEventLogMessage(data []byte) (WrappedEventLog, error) {
-	var eLog WrappedEventLog
-	err := json.Unmarshal(data, &eLog.Log)
+func parseEventLogMessage(data []byte) (EventLog, error) {
+	var eLog EventLog
+	err := json.Unmarshal(data, &eLog)
 	if err != nil {
-		return WrappedEventLog{}, err
+		return EventLog{}, err
 	}
 
 	if !eLog.hasTopics() {
-		return WrappedEventLog{}, fmt.Errorf("parsed event log has no topics.")
+		return EventLog{}, fmt.Errorf("parsed event log has no topics.")
 	}
 
-	eLog.CreateInstructions()
-	
 	return eLog, nil
 }
 

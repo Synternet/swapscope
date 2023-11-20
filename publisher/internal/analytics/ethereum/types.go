@@ -50,8 +50,8 @@ type WrappedEventLog struct {
 	Instructions EventInstruction
 }
 
-func (wel *WrappedEventLog) hasTopics() bool {
-	for _, str := range wel.Log.Topics {
+func (el *EventLog) hasTopics() bool {
+	for _, str := range el.Topics {
 		if str != "" {
 			return true
 		}
@@ -59,36 +59,14 @@ func (wel *WrappedEventLog) hasTopics() bool {
 	return false
 }
 
-func (wel *WrappedEventLog) CreateInstructions() {
-	signature := wel.Log.Topics[0]
-	switch {
-	case strings.HasPrefix(signature, transferSig):
-		wel.Instructions = EventInstruction{
-			Name:      "TRANSFER",
-			Header:    transferEventHeader,
-			Signature: transferSig,
-			Operation: nil,
-			PublishTo: "",
-		}
-	case strings.HasPrefix(signature, mintSig):
-		wel.Instructions = EventInstruction{
-			Name:      "ADDITION",
-			Header:    mintEventHeader,
-			Signature: mintSig,
-			Operation: &Addition{},
-			PublishTo: "add",
-		}
-	case strings.HasPrefix(signature, burnSig):
-		wel.Instructions = EventInstruction{
-			Name:      "REMOVAL",
-			Header:    burnEventHeader,
-			Signature: burnSig,
-			Operation: &Removal{},
-			PublishTo: "remove",
-		}
-	default:
-		wel.Instructions = EventInstruction{
-			Name: "OTHER",
-		}
-	}
+func (el *EventLog) isTransfer() bool {
+	return strings.HasPrefix(el.Topics[0], transferSig)
+}
+
+func (el *EventLog) isMint() bool {
+	return strings.HasPrefix(el.Topics[0], mintSig)
+}
+
+func (el *EventLog) isBurn() bool {
+	return strings.HasPrefix(el.Topics[0], burnSig)
 }

@@ -53,3 +53,50 @@ func (c EventLogCache) GetByTxHashAndLogType(txHash string, logType string) ([]E
 
 	return resFilteredByHashAndType, nil
 }
+
+func (a *Analytics) newWrappedEventLog(eLog EventLog) WrappedEventLog {
+	var wel WrappedEventLog
+	wel.Log = eLog
+
+	initOpBase := OperationBase{
+		db:    a.db,
+		cache: a.eventLogCache,
+		fetchers: Fetchers{
+			priceFetcher: a.priceFetcher,
+			tokenFetcher: a.tokenFetcher,
+		},
+	}
+
+	switch {
+	case eLog.isTransfer():
+		wel.Instructions = EventInstruction{
+			Name:      "TRANSFER",
+			Header:    transferEventHeader,
+			Signature: transferSig,
+			Operation: nil,
+			PublishTo: "",
+		}
+	case eLog.isMint():
+		wel.Instructions = EventInstruction{
+			Name:      "ADDITION",
+			Header:    mintEventHeader,
+			Signature: mintSig,
+			Operation: &Addition{OperationBase: initOpBase},
+			PublishTo: "add",
+		}
+	case eLog.isBurn():
+		wel.Instructions = EventInstruction{
+			Name:      "REMOVAL",
+			Header:    burnEventHeader,
+			Signature: burnSig,
+			Operation: &Removal{OperationBase: initOpBase},
+			PublishTo: "remove",
+		}
+	default:
+		wel.Instructions = EventInstruction{
+			Name: "OTHER",
+		}
+	}
+
+	return wel
+}

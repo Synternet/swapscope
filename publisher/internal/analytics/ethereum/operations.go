@@ -37,12 +37,11 @@ type Cache interface {
 
 type Operation interface {
 	// Common methods shared by Addition and Removal
-	Extract(WrappedEventLog) error
+	Process(WrappedEventLog) error
 	String() string
 	CanPublish() bool
-	Publish(string, time.Time) error
+	Publish(analytics.Sender, string, time.Time) error
 	Save(time.Time) error
-	Initialize(Database, *EventLogCache, *Analytics, analytics.Sender)
 }
 
 type Removal struct {
@@ -58,30 +57,6 @@ type Addition struct {
 	Position
 	OperationBase
 	Send analytics.Sender
-}
-
-func (rem *Removal) Initialize(db Database, cache *EventLogCache, a *Analytics, sender analytics.Sender) {
-	rem.OperationBase = OperationBase{
-		db:    db,
-		cache: cache,
-		fetchers: Fetchers{
-			priceFetcher: a.priceFetcher,
-			tokenFetcher: a.tokenFetcher,
-		},
-	}
-	rem.Send = sender
-}
-
-func (add *Addition) Initialize(db Database, cache *EventLogCache, a *Analytics, sender analytics.Sender) {
-	add.OperationBase = OperationBase{
-		db:    db,
-		cache: cache,
-		fetchers: Fetchers{
-			priceFetcher: a.priceFetcher,
-			tokenFetcher: a.tokenFetcher,
-		},
-	}
-	add.Send = sender
 }
 
 func (rem Removal) Save(ts time.Time) error {
@@ -118,7 +93,7 @@ func (add Addition) Save(ts time.Time) error {
 	return add.db.SaveAddition(addition)
 }
 
-func (rem *Removal) Extract(burn WrappedEventLog) error {
+func (rem *Removal) Process(burn WrappedEventLog) error {
 	burnLog := burn.Log
 	liqPool := burnLog.Address
 	addr0, addr1, found := rem.db.GetPoolPairAddresses(liqPool)
@@ -159,7 +134,7 @@ func (rem *Removal) Extract(burn WrappedEventLog) error {
 	return nil
 }
 
-func (add *Addition) Extract(mint WrappedEventLog) error {
+func (add *Addition) Process(mint WrappedEventLog) error {
 	mintLog := mint.Log
 	if !isUniswapPositionsNFT(mintLog.Data) {
 		return fmt.Errorf("not Uniswap Positions NFT.\n")
@@ -197,7 +172,7 @@ func (add *Addition) Extract(mint WrappedEventLog) error {
 }
 
 func (add Addition) savePool(addPos Position) error {
-	if isEitherTokenAmountZero(addPos) || !addPos.areTokensSet() {
+	if addPos.isEitherTokenAmountZero() || !addPos.areTokensSet() {
 		return nil
 	}
 	// In this case both tokens were transferred to LP and their order is correct
@@ -236,7 +211,7 @@ func (add Addition) String() string {
 		add.CurrentRatio)
 }
 
-func (rem Removal) Publish(publishTo string, timestamp time.Time) error {
+func (rem Removal) Publish(send analytics.Sender, publishTo string, timestamp time.Time) error {
 	removalMessage := types.RemovalMessage{
 		Timestamp:         timestamp,
 		Address:           rem.Address,
@@ -257,10 +232,10 @@ func (rem Removal) Publish(publishTo string, timestamp time.Time) error {
 	}
 
 	streamName := strings.ToLower(fmt.Sprintf("%s.%s.%s", publishTo, rem.Token0.Symbol, rem.Token1.Symbol))
-	return rem.Send(removalJson, streamName)
+	return send(removalJson, streamName)
 }
 
-func (add Addition) Publish(publishTo string, timestamp time.Time) error {
+func (add Addition) Publish(send analytics.Sender, publishTo string, timestamp time.Time) error {
 	additionMessage := types.AdditionMessage{
 		Timestamp:         timestamp,
 		Address:           add.Address,
@@ -281,7 +256,7 @@ func (add Addition) Publish(publishTo string, timestamp time.Time) error {
 	}
 
 	streamName := strings.ToLower(fmt.Sprintf("%s.%s.%s", publishTo, add.Token0.Symbol, add.Token1.Symbol))
-	return add.Send(additionJson, streamName)
+	return send(additionJson, streamName)
 }
 
 // handleLiquidityTransfer decodes Transfer event.
@@ -347,7 +322,7 @@ func (pos *Position) calculate() {
 	lowerRatio := convertTickToRatio(pos.LowerTick, pos.Token0.Decimals, pos.Token1.Decimals)
 	upperRatio := convertTickToRatio(pos.UpperTick, pos.Token0.Decimals, pos.Token1.Decimals)
 
-	if isStableOrNativeInvolved(*pos) && isOrderCorrect(*pos) {
+	if isStableOrNativeInvolved(*pos) && pos.isOrderCorrect() {
 		lowerRatio = 1 / lowerRatio
 		upperRatio = 1 / upperRatio
 	}
@@ -373,7 +348,7 @@ func (pos *Position) calculatePosition() {
 }
 
 func (pos *Position) adjustOrder() {
-	if isStableOrNativeInvolved(*pos) && !isOrderCorrect(*pos) {
+	if isStableOrNativeInvolved(*pos) && pos.isOrderCorrect() {
 		pos.Token1, pos.Token0 = pos.Token0, pos.Token1
 	}
 }
@@ -427,4 +402,12 @@ func (p Position) CanPublish() bool {
 
 func (p Position) areTokensSet() bool {
 	return (!strings.EqualFold(p.Token0.Address, "") && !strings.EqualFold(p.Token1.Address, ""))
+}
+
+func (p Position) isOrderCorrect() bool {
+	return (strings.EqualFold(p.Token1.Address, addressWETH) || strings.EqualFold(p.Token0.Address, addressUSDC) || strings.EqualFold(p.Token0.Address, addressUSDT))
+}
+
+func (p Position) isEitherTokenAmountZero() bool {
+	return (p.Token0.Amount == 0 || p.Token1.Amount == 0)
 }

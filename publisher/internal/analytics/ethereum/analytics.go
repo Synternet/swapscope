@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	mintSig           string
-	transferSig       string
-	burnSig           string
+	mintSig     string
+	transferSig string
+	burnSig     string
 )
 
 const (

@@ -12,12 +12,6 @@ func isUniswapPositionsNFT(address string) bool {
 	return false
 }
 
-func isOrderCorrect(position Position) bool {
-	token0 := position.Token0
-	token1 := position.Token1
-	return strings.EqualFold(token1.Address, addressWETH) || strings.EqualFold(token0.Address, addressUSDC) || strings.EqualFold(token0.Address, addressUSDT)
-}
-
 func isStableOrNativeInvolved(position Position) bool {
 	token0 := position.Token0
 	token1 := position.Token1
@@ -27,10 +21,4 @@ func isStableOrNativeInvolved(position Position) bool {
 		}
 	}
 	return false
-}
-
-func isEitherTokenAmountZero(position Position) bool {
-	token0 := position.Token0
-	token1 := position.Token1
-	return (token0.Amount == 0 || token1.Amount == 0)
 }
