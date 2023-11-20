@@ -10,14 +10,14 @@ import (
 // Cache is grouped by transaction hashes.
 // When Mint event is met, all logs until then are recovered from cache.
 // Cache clears every 1 minute (~5 ETH blocks).
-func (a *Analytics) addLogToTxCache(eLog WrappedEventLog) error {
-	txHash := eLog.Data.TransactionHash
-	logType := eLog.Instructions.Name
+func (a *Analytics) addLogToTxCache(wel WrappedEventLog) error {
+	txHash := wel.Log.TransactionHash
+	logType := wel.Instructions.Name
 	tempCacheValue, tempFound := a.eventLogCache.Get(txHash)
 	var newCacheValue CacheRecord
 
 	if !tempFound {
-		newCacheValue = CacheRecord{logType: []EventLog{eLog.Data}} // Initialize - there is absolutely nothing for this tx hash
+		newCacheValue = CacheRecord{logType: []EventLog{wel.Log}} // Initialize - there is absolutely nothing for this tx hash
 		a.eventLogCache.Set(txHash, newCacheValue, cache.DefaultExpiration)
 		return nil
 	}
@@ -25,11 +25,11 @@ func (a *Analytics) addLogToTxCache(eLog WrappedEventLog) error {
 	tempCacheRecord := tempCacheValue.(CacheRecord)
 
 	if events, ok := tempCacheRecord[logType].([]EventLog); ok {
-		moreEvents := append(events, eLog.Data)
+		moreEvents := append(events, wel.Log)
 		tempCacheRecord[logType] = moreEvents // Append - there is cache for this tx, and this log type
 		newCacheValue = tempCacheRecord
 	} else {
-		tempCacheRecord[logType] = []EventLog{eLog.Data} // Initialize - there is cache for this tx, but not for this log type
+		tempCacheRecord[logType] = []EventLog{wel.Log} // Initialize - there is cache for this tx, but not for this log type
 		newCacheValue = tempCacheRecord
 	}
 

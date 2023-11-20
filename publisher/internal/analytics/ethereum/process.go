@@ -20,10 +20,10 @@ func (a *Analytics) ProcessMessage(msg analytics.Message, send analytics.Sender)
 		return nil
 	}
 
-	operation := eLog.Instructions.Operation                      // Set to correct type
-	operation.InitializeOperation(a.db, a.eventLogCache, a, send) // Initialize with operation base (db, cache, fetchers) and send function
+	operation := eLog.Instructions.Operation             // Set to correct type
+	operation.Initialize(a.db, a.eventLogCache, a, send) // Initialize with operation base (db, cache, fetchers) and send function
 
-	err = operation.Extract(eLog.Data)
+	err = operation.Extract(eLog)
 	if err != nil {
 		log.Println("Failed to extract event from logs: ", err.Error())
 		return nil
@@ -34,7 +34,7 @@ func (a *Analytics) ProcessMessage(msg analytics.Message, send analytics.Sender)
 		return nil
 	}
 
-	log.Println("Tx hash:", eLog.Data.TransactionHash)
+	log.Println("Tx hash:", eLog.Log.TransactionHash)
 	log.Println("Operation processed:", operation.String())
 
 	//return operation.Save(msg.Timestamp) // Option to save additions and removals to DB

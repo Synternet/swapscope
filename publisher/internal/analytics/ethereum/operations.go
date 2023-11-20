@@ -37,12 +37,12 @@ type Cache interface {
 
 type Operation interface {
 	// Common methods shared by Addition and Removal
-	Extract(EventLog) error
+	Extract(WrappedEventLog) error
 	String() string
 	CanPublish() bool
 	Publish(string, time.Time) error
 	Save(time.Time) error
-	InitializeOperation(Database, *EventLogCache, *Analytics, analytics.Sender)
+	Initialize(Database, *EventLogCache, *Analytics, analytics.Sender)
 }
 
 type Removal struct {
@@ -60,7 +60,7 @@ type Addition struct {
 	Send analytics.Sender
 }
 
-func (rem *Removal) InitializeOperation(db Database, cache *EventLogCache, a *Analytics, sender analytics.Sender) {
+func (rem *Removal) Initialize(db Database, cache *EventLogCache, a *Analytics, sender analytics.Sender) {
 	rem.OperationBase = OperationBase{
 		db:    db,
 		cache: cache,
@@ -72,7 +72,7 @@ func (rem *Removal) InitializeOperation(db Database, cache *EventLogCache, a *An
 	rem.Send = sender
 }
 
-func (add *Addition) InitializeOperation(db Database, cache *EventLogCache, a *Analytics, sender analytics.Sender) {
+func (add *Addition) Initialize(db Database, cache *EventLogCache, a *Analytics, sender analytics.Sender) {
 	add.OperationBase = OperationBase{
 		db:    db,
 		cache: cache,
@@ -118,8 +118,9 @@ func (add Addition) Save(ts time.Time) error {
 	return add.db.SaveAddition(addition)
 }
 
-func (rem *Removal) Extract(burn EventLog) error {
-	liqPool := burn.Address
+func (rem *Removal) Extract(burn WrappedEventLog) error {
+	burnLog := burn.Log
+	liqPool := burnLog.Address
 	addr0, addr1, found := rem.db.GetPoolPairAddresses(liqPool)
 	if !found {
 		return fmt.Errorf("SKIP - liq. pool is unknown (removal). pool address: %s", liqPool)
@@ -130,17 +131,17 @@ func (rem *Removal) Extract(burn EventLog) error {
 		return fmt.Errorf("SKIP - at least one token is unknown in liquidity removal. pool address: %s", liqPool)
 	}
 
-	_, token0HexAmount, token1HexAmount, err := splitBurnDatatoHexStrings(burn.Data)
+	_, token0HexAmount, token1HexAmount, err := splitBurnDatatoHexStrings(burnLog.Data)
 	if err != nil {
 		return err
 	}
 
 	//TODO: Create a 'position initialization' function
 	remPosition := &Position{
-		Address:   burn.Address,
-		TxHash:    burn.TransactionHash,
-		LowerTick: int(convertHexToBigInt(burn.Topics[2]).Int64()),
-		UpperTick: int(convertHexToBigInt(burn.Topics[3]).Int64()),
+		Address:   burnLog.Address,
+		TxHash:    burnLog.TransactionHash,
+		LowerTick: int(convertHexToBigInt(burnLog.Topics[2]).Int64()),
+		UpperTick: int(convertHexToBigInt(burnLog.Topics[3]).Int64()),
 		Token0: TokenTransaction{
 			Token:  token0,
 			Amount: convertTransferAmount(token0HexAmount, token0.Decimals),
@@ -158,29 +159,30 @@ func (rem *Removal) Extract(burn EventLog) error {
 	return nil
 }
 
-func (add *Addition) Extract(mint EventLog) error {
-	if !isUniswapPositionsNFT(mint.Data) {
+func (add *Addition) Extract(mint WrappedEventLog) error {
+	mintLog := mint.Log
+	if !isUniswapPositionsNFT(mintLog.Data) {
 		return fmt.Errorf("not Uniswap Positions NFT.\n")
 	}
 	//TODO: Create a 'position initialization' function
 	addPosition := &Position{
-		Address:   mint.Address,
-		TxHash:    mint.TransactionHash,
-		LowerTick: int(convertHexToBigInt(mint.Topics[2]).Int64()),
-		UpperTick: int(convertHexToBigInt(mint.Topics[3]).Int64()),
+		Address:   mintLog.Address,
+		TxHash:    mintLog.TransactionHash,
+		LowerTick: int(convertHexToBigInt(mintLog.Topics[2]).Int64()),
+		UpperTick: int(convertHexToBigInt(mintLog.Topics[3]).Int64()),
 	}
 	add.Position = *addPosition
 
-	transferLogs, err := add.cache.GetByTxHashAndLogType(mint.TransactionHash, eventInstructions[transferSig].Name)
+	transferLogs, err := add.cache.GetByTxHashAndLogType(mintLog.TransactionHash, "TRANSFER")
 	if err != nil {
 		return err
 	}
 	for _, transferLog := range transferLogs { // Go through all transfers of this transaction
-		add.handleLiquidityTransfer(mint, transferLog)
+		add.handleLiquidityTransfer(mintLog, transferLog)
 	}
 
-	if isEitherTokenUnknown(add.Position) {
-		add.Position.checkAndUpdateMissingToken(mint, add.OperationBase) // 5) Adding missing token if only 1 token transfer was made
+	if !add.Position.areTokensSet() {
+		add.Position.checkAndUpdateMissingToken(mintLog, add.OperationBase) // 5) Adding missing token if only 1 token transfer was made
 	}
 
 	err = add.savePool(add.Position)
@@ -195,7 +197,7 @@ func (add *Addition) Extract(mint EventLog) error {
 }
 
 func (add Addition) savePool(addPos Position) error {
-	if isEitherTokenAmountZero(addPos) || isEitherTokenUnknown(addPos) {
+	if isEitherTokenAmountZero(addPos) || !addPos.areTokensSet() {
 		return nil
 	}
 	// In this case both tokens were transferred to LP and their order is correct
@@ -357,7 +359,7 @@ func (pos *Position) calculate() {
 }
 
 func (pos *Position) calculatePosition() {
-	if isEitherTokenUnknown(*pos) {
+	if !pos.areTokensSet() {
 		return
 	}
 
@@ -421,4 +423,8 @@ func (p Position) CanPublish() bool {
 	}
 
 	return true
+}
+
+func (p Position) areTokensSet() bool {
+	return (!strings.EqualFold(p.Token0.Address, "") && !strings.EqualFold(p.Token1.Address, ""))
 }

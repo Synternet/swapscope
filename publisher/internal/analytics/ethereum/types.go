@@ -1,6 +1,8 @@
 package ethereum
 
 import (
+	"strings"
+
 	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
 )
 
@@ -44,15 +46,49 @@ type EventInstruction struct {
 }
 
 type WrappedEventLog struct {
-	Data         EventLog
+	Log          EventLog
 	Instructions EventInstruction
 }
 
 func (wel *WrappedEventLog) hasTopics() bool {
-	for _, str := range wel.Data.Topics {
+	for _, str := range wel.Log.Topics {
 		if str != "" {
 			return true
 		}
 	}
 	return false
+}
+
+func (wel *WrappedEventLog) CreateInstructions() {
+	signature := wel.Log.Topics[0]
+	switch {
+	case strings.HasPrefix(signature, transferSig):
+		wel.Instructions = EventInstruction{
+			Name:      "TRANSFER",
+			Header:    transferEventHeader,
+			Signature: transferSig,
+			Operation: nil,
+			PublishTo: "",
+		}
+	case strings.HasPrefix(signature, mintSig):
+		wel.Instructions = EventInstruction{
+			Name:      "ADDITION",
+			Header:    mintEventHeader,
+			Signature: mintSig,
+			Operation: &Addition{},
+			PublishTo: "add",
+		}
+	case strings.HasPrefix(signature, burnSig):
+		wel.Instructions = EventInstruction{
+			Name:      "REMOVAL",
+			Header:    burnEventHeader,
+			Signature: burnSig,
+			Operation: &Removal{},
+			PublishTo: "remove",
+		}
+	default:
+		wel.Instructions = EventInstruction{
+			Name: "OTHER",
+		}
+	}
 }

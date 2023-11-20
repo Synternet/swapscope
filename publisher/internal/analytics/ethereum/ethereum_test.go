@@ -153,10 +153,10 @@ func Test_hasTopics(t *testing.T) {
 		inputEventLog WrappedEventLog
 		trueRes       bool
 	}{
-		{"1 topic", WrappedEventLog{Data: EventLog{Topics: []string{"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}}}, true},
-		{"3 topics", WrappedEventLog{Data: EventLog{Topics: []string{"0x0c396c", "0x0c396cd989a39f4", "0x0c396cd989a30c396c9f4"}}}, true},
-		{"1 empty topic", WrappedEventLog{Data: EventLog{Topics: []string{""}}}, false},
-		{"No topics", WrappedEventLog{Data: EventLog{Topics: []string{}}}, false},
+		{"1 topic", WrappedEventLog{Log: EventLog{Topics: []string{"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}}}, true},
+		{"3 topics", WrappedEventLog{Log: EventLog{Topics: []string{"0x0c396c", "0x0c396cd989a39f4", "0x0c396cd989a30c396c9f4"}}}, true},
+		{"1 empty topic", WrappedEventLog{Log: EventLog{Topics: []string{""}}}, false},
+		{"No topics", WrappedEventLog{Log: EventLog{Topics: []string{}}}, false},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -214,24 +214,24 @@ func Test_isStableOrNativeInvolved(t *testing.T) {
 	}
 }
 
-func Test_isEitherTokenUnknown(t *testing.T) {
+func Test_areTokensSet(t *testing.T) {
 	unknownToken := TokenTransaction{Token: repository.Token{}}
 	tests := []struct {
 		name    string
 		input   Position
 		trueRes bool
 	}{
-		{"unknown/native", Position{Token0: unknownToken, Token1: knownTokens["WETH"]}, true},
-		{"custom/unknown", Position{Token0: knownTokens["MATIC"], Token1: unknownToken}, true},
-		{"stable/unknown", Position{Token0: knownTokens["USDC"], Token1: unknownToken}, true},
-		{"stable/native", Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"]}, false},
-		{"native/unknown", Position{Token0: knownTokens["WETH"], Token1: unknownToken}, true},
-		{"custom/custom", Position{Token0: knownTokens["MATIC"], Token1: knownTokens["WBTC"]}, false},
-		{"unknown/custom", Position{Token0: unknownToken, Token1: knownTokens["PEPE"]}, true},
+		{"unknown/native", Position{Token0: unknownToken, Token1: knownTokens["WETH"]}, false},
+		{"custom/unknown", Position{Token0: knownTokens["MATIC"], Token1: unknownToken}, false},
+		{"stable/unknown", Position{Token0: knownTokens["USDC"], Token1: unknownToken}, false},
+		{"stable/native", Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"]}, true},
+		{"native/unknown", Position{Token0: knownTokens["WETH"], Token1: unknownToken}, false},
+		{"custom/custom", Position{Token0: knownTokens["MATIC"], Token1: knownTokens["WBTC"]}, true},
+		{"unknown/custom", Position{Token0: unknownToken, Token1: knownTokens["PEPE"]}, false},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res := isEitherTokenUnknown(test.input)
+			res := test.input.areTokensSet()
 			if res != test.trueRes {
 				t.Errorf("isEitherTokenUnknown(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
 			}

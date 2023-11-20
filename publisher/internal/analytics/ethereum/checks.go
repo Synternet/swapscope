@@ -29,12 +29,6 @@ func isStableOrNativeInvolved(position Position) bool {
 	return false
 }
 
-func isEitherTokenUnknown(position Position) bool {
-	token0 := position.Token0
-	token1 := position.Token1
-	return (strings.EqualFold(token0.Address, "") || strings.EqualFold(token1.Address, ""))
-}
-
 func isEitherTokenAmountZero(position Position) bool {
 	token0 := position.Token0
 	token1 := position.Token1
