@@ -41,7 +41,7 @@ func Test_tickConversion(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			test.input.calculateInterval()
+			test.input.calculate()
 			resLowerRatio := test.input.LowerRatio
 			resUpperRatio := test.input.UpperRatio
 			if math.Abs(resLowerRatio-test.trueLowerRatio)*1.0 > tolerance ||
@@ -147,74 +147,6 @@ func Test_isUniswapPositionsNFT(t *testing.T) {
 	}
 }
 
-func Test_isTransferEvent(t *testing.T) {
-	tests := []struct {
-		name          string
-		inputEventLog EventLog
-		trueRes       bool
-	}{
-		{"Topic with Transfer sig", EventLog{Topics: []string{"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}}, true},
-		{"Topic with other sig", EventLog{Topics: []string{"0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c"}}, false},
-		{"Transfer sig", EventLog{Topics: []string{"0xddf252ad1be2c89"}}, true},
-		{"Other sig", EventLog{Topics: []string{"0xddf252"}}, false},
-		{"Empty string", EventLog{Topics: []string{""}}, false},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			res := isTransferEvent(test.inputEventLog)
-			if res != test.trueRes {
-				t.Errorf("isTransferEvent(%v) = (%v); expected (%v)", test.inputEventLog, res, test.trueRes)
-			}
-		})
-	}
-}
-
-func Test_isMintEvent(t *testing.T) {
-	tests := []struct {
-		name          string
-		inputEventLog EventLog
-		trueRes       bool
-	}{
-		{"Topic with other sig", EventLog{Topics: []string{"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}}, false},
-		{"Topic with Mint sig", EventLog{Topics: []string{"0x7a53080ba414158be7ec69b987b5fb7d07dee101fe85488f0853ae16239d0bde"}}, true},
-		{"Mint sig", EventLog{Topics: []string{"0x7a53080ba414158"}}, true},
-		{"Other sig", EventLog{Topics: []string{"0x7a53"}}, false},
-		{"Empty string", EventLog{Topics: []string{""}}, false},
-	}
-	a := Analytics{}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			res := a.isMintEvent(test.inputEventLog)
-			if res != test.trueRes {
-				t.Errorf("isMintEvent(%v) = (%v); expected (%v)", test.inputEventLog, res, test.trueRes)
-			}
-		})
-	}
-}
-
-func Test_isBurnEvent(t *testing.T) {
-	tests := []struct {
-		name          string
-		inputEventLog EventLog
-		trueRes       bool
-	}{
-		{"Topic with other sig", EventLog{Topics: []string{"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"}}, false},
-		{"Topic with Burn sig", EventLog{Topics: []string{"0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c"}}, true},
-		{"Burn sig", EventLog{Topics: []string{"0x0c396cd989a39f4"}}, true},
-		{"Other sig", EventLog{Topics: []string{"0x0c396c"}}, false},
-		{"Empty string", EventLog{Topics: []string{""}}, false},
-	}
-	a := Analytics{}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			res := a.isBurnEvent(test.inputEventLog)
-			if res != test.trueRes {
-				t.Errorf("isBurnEvent(%v) = (%v); expected (%v)", test.inputEventLog, res, test.trueRes)
-			}
-		})
-	}
-}
-
 func Test_hasTopics(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -228,7 +160,7 @@ func Test_hasTopics(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res := hasTopics(test.inputEventLog)
+			res := test.inputEventLog.hasTopics()
 			if res != test.trueRes {
 				t.Errorf("hasTopics(%v) = (%v); expected (%v)", test.inputEventLog, res, test.trueRes)
 			}
@@ -253,7 +185,7 @@ func Test_isOrderCorrect(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res := isOrderCorrect(test.input)
+			res := test.input.isOrderCorrect()
 			if res != test.trueRes {
 				t.Errorf("isOrderCorrect(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
 			}
@@ -282,24 +214,24 @@ func Test_isStableOrNativeInvolved(t *testing.T) {
 	}
 }
 
-func Test_isEitherTokenUnknown(t *testing.T) {
+func Test_areTokensSet(t *testing.T) {
 	unknownToken := TokenTransaction{Token: repository.Token{}}
 	tests := []struct {
 		name    string
 		input   Position
 		trueRes bool
 	}{
-		{"unknown/native", Position{Token0: unknownToken, Token1: knownTokens["WETH"]}, true},
-		{"custom/unknown", Position{Token0: knownTokens["MATIC"], Token1: unknownToken}, true},
-		{"stable/unknown", Position{Token0: knownTokens["USDC"], Token1: unknownToken}, true},
-		{"stable/native", Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"]}, false},
-		{"native/unknown", Position{Token0: knownTokens["WETH"], Token1: unknownToken}, true},
-		{"custom/custom", Position{Token0: knownTokens["MATIC"], Token1: knownTokens["WBTC"]}, false},
-		{"unknown/custom", Position{Token0: unknownToken, Token1: knownTokens["PEPE"]}, true},
+		{"unknown/native", Position{Token0: unknownToken, Token1: knownTokens["WETH"]}, false},
+		{"custom/unknown", Position{Token0: knownTokens["MATIC"], Token1: unknownToken}, false},
+		{"stable/unknown", Position{Token0: knownTokens["USDC"], Token1: unknownToken}, false},
+		{"stable/native", Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"]}, true},
+		{"native/unknown", Position{Token0: knownTokens["WETH"], Token1: unknownToken}, false},
+		{"custom/custom", Position{Token0: knownTokens["MATIC"], Token1: knownTokens["WBTC"]}, true},
+		{"unknown/custom", Position{Token0: unknownToken, Token1: knownTokens["PEPE"]}, false},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res := isEitherTokenUnknown(test.input)
+			res := test.input.areTokensSet()
 			if res != test.trueRes {
 				t.Errorf("isEitherTokenUnknown(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
 			}
@@ -324,7 +256,7 @@ func Test_isEitherTokenAmountIsZero(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res := isEitherTokenAmountZero(test.input)
+			res := test.input.isEitherTokenAmountZero()
 			if res != test.trueRes {
 				t.Errorf("isEitherTokenAmountIsZero(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
 			}

@@ -31,7 +31,12 @@ type Analytics struct {
 	db  repository.Repository
 	ctx context.Context
 
-	eventLogCache *cache.Cache
+	eventLogCache *EventLogCache
+}
+
+type CacheRecord map[string]interface{}
+type EventLogCache struct {
+	*cache.Cache
 }
 
 func init() {
@@ -56,7 +61,7 @@ func New(ctx context.Context, db repository.Repository, opts ...Option) (*Analyt
 		return nil, errors.New("token fetcher must be set")
 	}
 
-	ret.eventLogCache = cache.New(ret.Options.eventLogCacheExpirationTime, ret.Options.eventLogCachePurgeTime)
+	ret.eventLogCache = &EventLogCache{cache.New(ret.Options.eventLogCacheExpirationTime, ret.Options.eventLogCachePurgeTime)}
 
 	return ret, nil
 }

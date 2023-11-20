@@ -1,6 +1,8 @@
 package ethereum
 
 import (
+	"strings"
+
 	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
 )
 
@@ -33,4 +35,38 @@ type TokenTransaction struct {
 	repository.Token
 	Amount float64
 	Price  float64
+}
+
+type EventInstruction struct {
+	Name      string
+	Header    string
+	Signature string
+	PublishTo string
+	Operation
+}
+
+type WrappedEventLog struct {
+	Log          EventLog
+	Instructions EventInstruction
+}
+
+func (el *EventLog) hasTopics() bool {
+	for _, str := range el.Topics {
+		if str != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func (el *EventLog) isTransfer() bool {
+	return strings.HasPrefix(el.Topics[0], transferSig)
+}
+
+func (el *EventLog) isMint() bool {
+	return strings.HasPrefix(el.Topics[0], mintSig)
+}
+
+func (el *EventLog) isBurn() bool {
+	return strings.HasPrefix(el.Topics[0], burnSig)
 }
