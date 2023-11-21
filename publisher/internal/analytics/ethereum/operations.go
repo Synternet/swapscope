@@ -254,7 +254,12 @@ func (rem Removal) Publish(send analytics.Sender, publishTo string, timestamp ti
 			{Symbol: rem.Token0.Symbol, Amount: rem.Token0.Amount, Price: rem.Token0.Price},
 			{Symbol: rem.Token1.Symbol, Amount: rem.Token1.Amount, Price: rem.Token1.Price},
 		},
-		TxHash: rem.TxHash,
+		Earned: [2]types.TokensEarnedMessage{
+			{Symbol: rem.Token0.Symbol, Amount: rem.Token0Earned.Amount, TotalValueUSD: rem.Token0.Price * rem.Token0Earned.Amount},
+			{Symbol: rem.Token1.Symbol, Amount: rem.Token1Earned.Amount, TotalValueUSD: rem.Token1.Price * rem.Token1Earned.Amount},
+		},
+		ValueEarnedUSD: rem.Token0.Price*rem.Token0Earned.Amount + rem.Token1.Price*rem.Token1Earned.Amount,
+		TxHash:         rem.TxHash,
 	}
 
 	removalJson, err := json.Marshal(&removalMessage)
