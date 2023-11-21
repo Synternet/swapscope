@@ -150,14 +150,13 @@ func (rem *Removal) Process(collect WrappedEventLog) error {
 		},
 	}
 	rem.Position = *remPosition
-
-	rem.OperationBase.includeTokenPrices(&rem.Position)
-
+	rem.Token0.Price = rem.fetchTokenPrice(rem.Token0.Address)
+	rem.Token1.Price = rem.fetchTokenPrice(rem.Token1.Address)
 	err = rem.calculateFeesEarned(collect.Log)
 	if err != nil {
 		return err
 	}
-	rem.Position.calculatePosition()
+	rem.Position.calculate()
 	return nil
 }
 
@@ -192,8 +191,9 @@ func (add *Addition) Process(mint WrappedEventLog) error {
 		log.Println("error while adding new pool to database:", err.Error())
 	}
 
-	add.OperationBase.includeTokenPrices(&add.Position) // 6) Getting token prices
-	add.Position.calculatePosition()                    // 7) Save Liquidity Entry and Liquidity Pool
+	add.Token0.Price = add.fetchTokenPrice(add.Token0.Address)
+	add.Token1.Price = add.fetchTokenPrice(add.Token1.Address)
+	add.Position.calculate() // 7) Save Liquidity Entry and Liquidity Pool
 
 	return nil
 }
@@ -302,19 +302,21 @@ func (add *Addition) handleLiquidityTransfer(mint EventLog, transfer EventLog) {
 	token0HexAmount, token1HexAmount, err := convertLogDataToHexAmounts(mint.Data, mintEvent)
 	if err != nil {
 		log.Println("Could not split mint event into Amount fields: ", err.Error())
+		return
 	}
 
 	t, err := add.lookupToken(transfer.Address)
 	if err != nil {
 		log.Println("Failed fetching token information: ", err.Error())
+		return
 	}
 
-	if "0x"+convertHexToBigInt(transfer.Data).Text(16) == token0HexAmount {
+	if "0x"+convertHexToBigInt(transfer.Data).Text(16) == token0HexAmount && !strings.EqualFold(transfer.Address, add.Token1.Token.Address) {
 		add.Token0.Token = t
 		add.Token0.Amount = convertTransferAmount(token0HexAmount, t.Decimals)
 	}
 
-	if "0x"+convertHexToBigInt(transfer.Data).Text(16) == token1HexAmount {
+	if "0x"+convertHexToBigInt(transfer.Data).Text(16) == token1HexAmount && !strings.EqualFold(transfer.Address, add.Token0.Token.Address) {
 		add.Token1.Token = t
 		add.Token1.Amount = convertTransferAmount(token1HexAmount, t.Decimals)
 	}
@@ -330,7 +332,7 @@ func (rem *Removal) calculateFeesEarned(collectLog EventLog) error {
 	rem.Token0Earned.Amount = convertTransferAmount(token0HexAmount, rem.Token0.Decimals) - rem.Token0.Amount
 	rem.Token1Earned.Amount = convertTransferAmount(token1HexAmount, rem.Token1.Decimals) - rem.Token1.Amount
 
-	if !rem.Position.isOrderCorrect() {
+	if !rem.Position.isStableOrNativeInCorrectPosition() {
 		rem.Token0Earned, rem.Token1Earned = rem.Token1Earned, rem.Token0Earned
 	}
 
@@ -340,23 +342,16 @@ func (rem *Removal) calculateFeesEarned(collectLog EventLog) error {
 // ----------------------------------------------------------------------
 // --------------- OperationBase methods
 
-func (ob OperationBase) includeTokenPrices(pos *Position) {
+func (ob OperationBase) fetchTokenPrice(tokAddress string) float64 {
 	// Place here to implement price cache?
-	if !strings.EqualFold(pos.Token0.Address, "") {
-		price, err := ob.lookupPrice(pos.Token0.Address)
-		if err != nil {
-			log.Println("failed to feetch Token0 price: ", err.Error())
-		}
-		pos.Token0.Price = price.Value
+	if strings.EqualFold(tokAddress, "") {
+		return 0.0
 	}
-
-	if !strings.EqualFold(pos.Token1.Address, "") {
-		price, err := ob.lookupPrice(pos.Token1.Address)
-		if err != nil {
-			log.Println("failed to feetch Token1 price: ", err.Error())
-		}
-		pos.Token1.Price = price.Value
+	price, err := ob.lookupPrice(tokAddress)
+	if err != nil {
+		log.Println("failed to fetch Token0 price: ", err.Error())
 	}
+	return price.Value
 }
 
 func (op OperationBase) lookupToken(address string) (repository.Token, error) {
@@ -370,12 +365,12 @@ func (op OperationBase) lookupPrice(address string) (repository.TokenPrice, erro
 // ----------------------------------------------------------------------
 // --------------- Position methods
 
-func (pos *Position) calculate() {
+func (pos *Position) calculateRatios() {
 
 	lowerRatio := convertTickToRatio(pos.LowerTick, pos.Token0.Decimals, pos.Token1.Decimals)
 	upperRatio := convertTickToRatio(pos.UpperTick, pos.Token0.Decimals, pos.Token1.Decimals)
 
-	if isStableOrNativeInvolved(*pos) && pos.isOrderCorrect() {
+	if isStableOrNativeInvolved(*pos) && pos.isStableOrNativeInCorrectPosition() {
 		lowerRatio = 1 / lowerRatio
 		upperRatio = 1 / upperRatio
 	}
@@ -386,12 +381,12 @@ func (pos *Position) calculate() {
 	pos.LowerRatio, pos.UpperRatio = lowerRatio, upperRatio
 }
 
-func (pos *Position) calculatePosition() {
+func (pos *Position) calculate() {
 	if !pos.areTokensSet() {
 		return
 	}
 
-	pos.calculate() // Decoding / expanding "Mint" event
+	pos.calculateRatios()
 	pos.adjustOrder()
 
 	if pos.Token0.Price > 0 && pos.Token1.Price > 0 {
@@ -401,7 +396,7 @@ func (pos *Position) calculatePosition() {
 }
 
 func (pos *Position) adjustOrder() {
-	if isStableOrNativeInvolved(*pos) && !pos.isOrderCorrect() {
+	if isStableOrNativeInvolved(*pos) && !pos.isStableOrNativeInCorrectPosition() {
 		pos.Token1, pos.Token0 = pos.Token0, pos.Token1
 	}
 }
@@ -449,6 +444,10 @@ func (p Position) CanPublish() bool {
 		log.Printf("SKIP - no tokens moved. Tx: %s\n\n", p.TxHash)
 		return false
 	}
+	if p.Token0.Price == 0.0 || p.Token1.Price == 0.0 {
+		log.Printf("SKIP - missing price (could not calculate current ratio). Tx: %s\n\n", p.TxHash)
+		return false
+	}
 
 	return true
 }
@@ -457,7 +456,7 @@ func (p Position) areTokensSet() bool {
 	return (!strings.EqualFold(p.Token0.Address, "") && !strings.EqualFold(p.Token1.Address, ""))
 }
 
-func (p Position) isOrderCorrect() bool {
+func (p Position) isStableOrNativeInCorrectPosition() bool {
 	return (strings.EqualFold(p.Token1.Address, addressWETH) || strings.EqualFold(p.Token0.Address, addressUSDC) || strings.EqualFold(p.Token0.Address, addressUSDT))
 }
 
