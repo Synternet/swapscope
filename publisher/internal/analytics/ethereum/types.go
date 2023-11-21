@@ -70,3 +70,7 @@ func (el *EventLog) isMint() bool {
 func (el *EventLog) isBurn() bool {
 	return strings.HasPrefix(el.Topics[0], burnSig)
 }
+
+func (el *EventLog) isCollect() bool {
+	return strings.HasPrefix(el.Topics[0], collectSig)
+}

@@ -49,8 +49,8 @@ type Removal struct {
 	OperationBase
 	Send analytics.Sender
 	//TODO: Fees earned and collected
-	//TokenEarned0 TokenTransaction
-	//TokenEarned1 TokenTransaction
+	Token0Earned TokenTransaction
+	Token1Earned TokenTransaction
 }
 
 type Addition struct {
@@ -93,9 +93,32 @@ func (add Addition) Save(ts time.Time) error {
 	return add.db.SaveAddition(addition)
 }
 
-func (rem *Removal) Process(burn WrappedEventLog) error {
-	burnLog := burn.Log
-	liqPool := burnLog.Address
+func (rem Removal) getCorespondingRemoval(primaryLog WrappedEventLog) (EventLog, error) {
+	removalLogs, err := rem.cache.GetByTxHashAndLogType(primaryLog.Log.TransactionHash, "BURN")
+	if err != nil {
+		return EventLog{}, err
+	}
+	var requiredLog EventLog
+	for _, renovalLog := range removalLogs {
+		if renovalLog.Address == primaryLog.Log.Address { // Match liquidity pool
+			requiredLog = renovalLog
+			break
+		}
+	}
+	if requiredLog.Address == "" {
+		return EventLog{}, fmt.Errorf("fetched burn event has no liquidity pool.")
+	}
+	return requiredLog, nil
+}
+
+func (rem *Removal) Process(collect WrappedEventLog) error {
+	liqPool := collect.Log.Address
+
+	burnLog, err := rem.getCorespondingRemoval(collect)
+	if err != nil {
+		return err
+	}
+
 	addr0, addr1, found := rem.db.GetPoolPairAddresses(liqPool)
 	if !found {
 		return fmt.Errorf("SKIP - liq. pool is unknown (removal). pool address: %s", liqPool)
@@ -128,9 +151,13 @@ func (rem *Removal) Process(burn WrappedEventLog) error {
 	}
 	rem.Position = *remPosition
 
-	rem.OperationBase.includeTokenPrices(&rem.Position) // 6) Getting token prices
-	rem.Position.calculatePosition()                    // 7) Save Liquidity Entry and Liquidity Pool
+	rem.OperationBase.includeTokenPrices(&rem.Position)
 
+	err = rem.calculateFeesEarned(collect.Log)
+	if err != nil {
+		return err
+	}
+	rem.Position.calculatePosition()
 	return nil
 }
 
@@ -184,15 +211,19 @@ func (add Addition) savePool(addPos Position) error {
 }
 
 func (rem Removal) String() string {
-	format := "Removing %f of %s and %f of %s from %s between %f and %f"
+	format := "Removing %f of %s and %f of %s from %s. Earned %f of %s and %f of %s ($%f)"
 	return fmt.Sprintf(format,
 		rem.Token0.Amount,
 		rem.Token0.Symbol,
 		rem.Token1.Amount,
 		rem.Token1.Symbol,
 		rem.Address,
-		rem.LowerRatio,
-		rem.UpperRatio)
+		rem.Token0Earned.Amount,
+		rem.Token0.Symbol,
+		rem.Token1Earned.Amount,
+		rem.Token1.Symbol,
+		rem.Token0Earned.Amount*rem.Token0.Price+rem.Token1Earned.Amount*rem.Token1.Price,
+	)
 }
 
 func (add Addition) String() string {
@@ -284,6 +315,23 @@ func (add *Addition) handleLiquidityTransfer(mint EventLog, transfer EventLog) {
 	}
 }
 
+func (rem *Removal) calculateFeesEarned(collectLog EventLog) error {
+	_, token0HexAmount, token1HexAmount, err := splitCollectDatatoHexFields(collectLog.Data) // Token order original as in liquidity pool
+	if err != nil {
+		return err
+	}
+
+	rem.Token0Earned, rem.Token1Earned = rem.Token0, rem.Token1
+	rem.Token0Earned.Amount = convertTransferAmount(token0HexAmount, rem.Token0.Decimals) - rem.Token0.Amount
+	rem.Token1Earned.Amount = convertTransferAmount(token1HexAmount, rem.Token1.Decimals) - rem.Token1.Amount
+
+	if !rem.Position.isOrderCorrect() {
+		rem.Token0Earned, rem.Token1Earned = rem.Token1Earned, rem.Token0Earned
+	}
+
+	return nil
+}
+
 // ----------------------------------------------------------------------
 // --------------- OperationBase methods
 
@@ -348,7 +396,7 @@ func (pos *Position) calculatePosition() {
 }
 
 func (pos *Position) adjustOrder() {
-	if isStableOrNativeInvolved(*pos) && pos.isOrderCorrect() {
+	if isStableOrNativeInvolved(*pos) && !pos.isOrderCorrect() {
 		pos.Token1, pos.Token0 = pos.Token0, pos.Token1
 	}
 }

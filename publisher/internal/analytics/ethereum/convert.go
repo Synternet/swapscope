@@ -110,3 +110,22 @@ func splitMintDatatoHexFields(data string) (string, string, string, error) {
 
 	return amountHex, amountToken0Hex, amountToken1Hex, nil
 }
+
+func splitCollectDatatoHexFields(data string) (string, string, string, error) {
+	const (
+		AmountOffset            = 2
+		AmountRecipientAddress  = 64
+		AmountToken0Size        = 64
+		AmountToken1Size        = 64
+		RequiredDataFieldLength = AmountToken0Size + AmountToken0Size + AmountRecipientAddress + AmountOffset
+		AmountSkip              = AmountOffset + AmountRecipientAddress
+	)
+
+	if len(data) != RequiredDataFieldLength {
+		return "", "", "", fmt.Errorf("the data field length is not of expected size, could not parse amount fields.")
+	}
+	amountToken0Hex := "0x" + data[AmountSkip:AmountSkip+AmountToken0Size]
+	amountToken1Hex := "0x" + data[AmountSkip+AmountToken0Size:]
+
+	return "", amountToken0Hex, amountToken1Hex, nil
+}

@@ -86,9 +86,15 @@ func (a *Analytics) newWrappedEventLog(eLog EventLog) WrappedEventLog {
 		}
 	case eLog.isBurn():
 		wel.Instructions = EventInstruction{
-			Name:      "REMOVAL",
+			Name:      "BURN",
 			Header:    burnEventHeader,
 			Signature: burnSig,
+		}
+	case eLog.isCollect():
+		wel.Instructions = EventInstruction{
+			Name:      "COLLECTION",
+			Header:    collectEventHeader,
+			Signature: collectSig,
 			Operation: &Removal{OperationBase: initOpBase},
 			PublishTo: "remove",
 		}
