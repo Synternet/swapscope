@@ -94,7 +94,7 @@ func (add Addition) Save(ts time.Time) error {
 }
 
 func (rem Removal) getCorespondingRemoval(primaryLog WrappedEventLog) (EventLog, error) {
-	removalLogs, err := rem.cache.GetByTxHashAndLogType(primaryLog.Log.TransactionHash, "BURN")
+	removalLogs, err := rem.cache.GetByTxHashAndLogType(primaryLog.Log.TransactionHash, burnEvent)
 	if err != nil {
 		return EventLog{}, err
 	}
@@ -129,7 +129,7 @@ func (rem *Removal) Process(collect WrappedEventLog) error {
 		return fmt.Errorf("SKIP - at least one token is unknown in liquidity removal. pool address: %s", liqPool)
 	}
 
-	_, token0HexAmount, token1HexAmount, err := splitBurnDatatoHexStrings(burnLog.Data)
+	token0HexAmount, token1HexAmount, err := convertLogDataToHexAmounts(burnLog.Data, burnEvent)
 	if err != nil {
 		return err
 	}
@@ -175,7 +175,7 @@ func (add *Addition) Process(mint WrappedEventLog) error {
 	}
 	add.Position = *addPosition
 
-	transferLogs, err := add.cache.GetByTxHashAndLogType(mintLog.TransactionHash, "TRANSFER")
+	transferLogs, err := add.cache.GetByTxHashAndLogType(mintLog.TransactionHash, transferEvent)
 	if err != nil {
 		return err
 	}
@@ -299,7 +299,7 @@ func (add Addition) Publish(send analytics.Sender, publishTo string, timestamp t
 // Getting token that was transferred and calculating amount transferred.
 // Keeping track of tokens involved in current Liq. Add. event.
 func (add *Addition) handleLiquidityTransfer(mint EventLog, transfer EventLog) {
-	_, token0HexAmount, token1HexAmount, err := splitMintDatatoHexFields(mint.Data)
+	token0HexAmount, token1HexAmount, err := convertLogDataToHexAmounts(mint.Data, mintEvent)
 	if err != nil {
 		log.Println("Could not split mint event into Amount fields: ", err.Error())
 	}
@@ -309,19 +309,19 @@ func (add *Addition) handleLiquidityTransfer(mint EventLog, transfer EventLog) {
 		log.Println("Failed fetching token information: ", err.Error())
 	}
 
-	if transfer.Data == token0HexAmount {
+	if "0x"+convertHexToBigInt(transfer.Data).Text(16) == token0HexAmount {
 		add.Token0.Token = t
 		add.Token0.Amount = convertTransferAmount(token0HexAmount, t.Decimals)
 	}
 
-	if transfer.Data == token1HexAmount {
+	if "0x"+convertHexToBigInt(transfer.Data).Text(16) == token1HexAmount {
 		add.Token1.Token = t
 		add.Token1.Amount = convertTransferAmount(token1HexAmount, t.Decimals)
 	}
 }
 
 func (rem *Removal) calculateFeesEarned(collectLog EventLog) error {
-	_, token0HexAmount, token1HexAmount, err := splitCollectDatatoHexFields(collectLog.Data) // Token order original as in liquidity pool
+	token0HexAmount, token1HexAmount, err := convertLogDataToHexAmounts(collectLog.Data, collectEvent) // Token order original as in liquidity pool
 	if err != nil {
 		return err
 	}

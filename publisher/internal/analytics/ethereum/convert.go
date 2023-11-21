@@ -1,6 +1,7 @@
 package ethereum
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -8,6 +9,7 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -72,60 +74,24 @@ func convertTransferAmount(amountHex string, decimals int) float64 {
 	return amountScaled
 }
 
-func splitBurnDatatoHexStrings(data string) (string, string, string, error) {
-	const (
-		AmountOffset            = 2
-		AmountToken0Size        = 64
-		AmountToken1Size        = 64
-		RequiredDataFieldLength = 194
-	)
-
-	if len(data) != RequiredDataFieldLength {
-		return "", "", "", fmt.Errorf("the data field length is not of expected size, could not parse amount fields.")
+func convertLogDataToHexAmounts(rawData string, eventName string) (string, string, error) {
+	var abiToUse abi.ABI
+	switch {
+	case eventName == collectEvent:
+		abiToUse = uniswapLiqPositionsABI
+	default:
+		abiToUse = uniswapLiqPoolsABI
 	}
-	amountHex := "0x" + data[AmountOffset:AmountOffset+AmountToken0Size]
-	amountToken0Hex := "0x" + data[AmountOffset+AmountToken0Size:AmountOffset+AmountToken0Size+AmountToken0Size]
-	amountToken1Hex := "0x" + data[AmountOffset+AmountToken0Size+AmountToken1Size:]
+	hexString := strings.TrimPrefix(rawData, "0x")
+	data, err := hex.DecodeString(hexString)
 
-	return amountHex, amountToken0Hex, amountToken1Hex, nil
-}
-
-func splitMintDatatoHexFields(data string) (string, string, string, error) {
-	const (
-		AmountOffset            = 2
-		AmountOwnerAddress      = 64
-		AmountSize              = 64
-		AmountToken0Size        = 64
-		AmountToken1Size        = 64
-		RequiredDataFieldLength = 258
-		AmountSkip              = AmountOffset + AmountOwnerAddress
-	)
-
-	if len(data) != RequiredDataFieldLength {
-		return "", "", "", fmt.Errorf("the data field length is not of expected size, could not parse amount fields.")
+	var args = make(map[string]interface{})
+	err = abiToUse.UnpackIntoMap(args, eventName, []byte(data))
+	if err != nil {
+		return "", "", err
 	}
-	amountHex := "0x" + data[AmountSkip:AmountSkip+AmountSize]
-	amountToken0Hex := "0x" + data[AmountSkip+AmountSize:AmountSkip+AmountSize+AmountToken0Size]
-	amountToken1Hex := "0x" + data[AmountSkip+AmountSize+AmountToken0Size:]
 
-	return amountHex, amountToken0Hex, amountToken1Hex, nil
-}
-
-func splitCollectDatatoHexFields(data string) (string, string, string, error) {
-	const (
-		AmountOffset            = 2
-		AmountRecipientAddress  = 64
-		AmountToken0Size        = 64
-		AmountToken1Size        = 64
-		RequiredDataFieldLength = AmountToken0Size + AmountToken0Size + AmountRecipientAddress + AmountOffset
-		AmountSkip              = AmountOffset + AmountRecipientAddress
-	)
-
-	if len(data) != RequiredDataFieldLength {
-		return "", "", "", fmt.Errorf("the data field length is not of expected size, could not parse amount fields.")
-	}
-	amountToken0Hex := "0x" + data[AmountSkip:AmountSkip+AmountToken0Size]
-	amountToken1Hex := "0x" + data[AmountSkip+AmountToken0Size:]
-
-	return "", amountToken0Hex, amountToken1Hex, nil
+	resAmount0Hex := "0x" + args["amount0"].(*big.Int).Text(16)
+	resAmount1Hex := "0x" + args["amount1"].(*big.Int).Text(16)
+	return resAmount0Hex, resAmount1Hex, nil
 }
