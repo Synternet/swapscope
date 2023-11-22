@@ -49,8 +49,8 @@ type Removal struct {
 	OperationBase
 	Send analytics.Sender
 	//TODO: Fees earned and collected
-	//TokenEarned0 TokenTransaction
-	//TokenEarned1 TokenTransaction
+	Token0Earned TokenTransaction
+	Token1Earned TokenTransaction
 }
 
 type Addition struct {
@@ -93,9 +93,32 @@ func (add Addition) Save(ts time.Time) error {
 	return add.db.SaveAddition(addition)
 }
 
-func (rem *Removal) Process(burn WrappedEventLog) error {
-	burnLog := burn.Log
-	liqPool := burnLog.Address
+func (rem Removal) getCorespondingRemoval(primaryLog WrappedEventLog) (EventLog, error) {
+	removalLogs, err := rem.cache.GetByTxHashAndLogType(primaryLog.Log.TransactionHash, burnEvent)
+	if err != nil {
+		return EventLog{}, err
+	}
+	var requiredLog EventLog
+	for _, renovalLog := range removalLogs {
+		if renovalLog.Address == primaryLog.Log.Address { // Match liquidity pool
+			requiredLog = renovalLog
+			break
+		}
+	}
+	if requiredLog.Address == "" {
+		return EventLog{}, fmt.Errorf("fetched burn event has no liquidity pool.")
+	}
+	return requiredLog, nil
+}
+
+func (rem *Removal) Process(collect WrappedEventLog) error {
+	liqPool := collect.Log.Address
+
+	burnLog, err := rem.getCorespondingRemoval(collect)
+	if err != nil {
+		return err
+	}
+
 	addr0, addr1, found := rem.db.GetPoolPairAddresses(liqPool)
 	if !found {
 		return fmt.Errorf("SKIP - liq. pool is unknown (removal). pool address: %s", liqPool)
@@ -106,7 +129,7 @@ func (rem *Removal) Process(burn WrappedEventLog) error {
 		return fmt.Errorf("SKIP - at least one token is unknown in liquidity removal. pool address: %s", liqPool)
 	}
 
-	_, token0HexAmount, token1HexAmount, err := splitBurnDatatoHexStrings(burnLog.Data)
+	token0HexAmount, token1HexAmount, err := convertLogDataToHexAmounts(burnLog.Data, burnEvent)
 	if err != nil {
 		return err
 	}
@@ -127,10 +150,13 @@ func (rem *Removal) Process(burn WrappedEventLog) error {
 		},
 	}
 	rem.Position = *remPosition
-
-	rem.OperationBase.includeTokenPrices(&rem.Position) // 6) Getting token prices
-	rem.Position.calculatePosition()                    // 7) Save Liquidity Entry and Liquidity Pool
-
+	rem.Token0.Price = rem.fetchTokenPrice(rem.Token0.Address)
+	rem.Token1.Price = rem.fetchTokenPrice(rem.Token1.Address)
+	err = rem.calculateFeesEarned(collect.Log)
+	if err != nil {
+		return err
+	}
+	rem.Position.calculate()
 	return nil
 }
 
@@ -148,7 +174,7 @@ func (add *Addition) Process(mint WrappedEventLog) error {
 	}
 	add.Position = *addPosition
 
-	transferLogs, err := add.cache.GetByTxHashAndLogType(mintLog.TransactionHash, "TRANSFER")
+	transferLogs, err := add.cache.GetByTxHashAndLogType(mintLog.TransactionHash, transferEvent)
 	if err != nil {
 		return err
 	}
@@ -165,14 +191,15 @@ func (add *Addition) Process(mint WrappedEventLog) error {
 		log.Println("error while adding new pool to database:", err.Error())
 	}
 
-	add.OperationBase.includeTokenPrices(&add.Position) // 6) Getting token prices
-	add.Position.calculatePosition()                    // 7) Save Liquidity Entry and Liquidity Pool
+	add.Token0.Price = add.fetchTokenPrice(add.Token0.Address)
+	add.Token1.Price = add.fetchTokenPrice(add.Token1.Address)
+	add.Position.calculate() // 7) Save Liquidity Entry and Liquidity Pool
 
 	return nil
 }
 
 func (add Addition) savePool(addPos Position) error {
-	if addPos.isEitherTokenAmountZero() || !addPos.areTokensSet() {
+	if addPos.isEitherTokenAmountZero() || !addPos.areTokensSet() || (addPos.Token0.Address == addPos.Token1.Address) {
 		return nil
 	}
 	// In this case both tokens were transferred to LP and their order is correct
@@ -184,15 +211,19 @@ func (add Addition) savePool(addPos Position) error {
 }
 
 func (rem Removal) String() string {
-	format := "Removing %f of %s and %f of %s from %s between %f and %f"
+	format := "Removing %f of %s and %f of %s from %s. Earned %f of %s and %f of %s ($%f)"
 	return fmt.Sprintf(format,
 		rem.Token0.Amount,
 		rem.Token0.Symbol,
 		rem.Token1.Amount,
 		rem.Token1.Symbol,
 		rem.Address,
-		rem.LowerRatio,
-		rem.UpperRatio)
+		rem.Token0Earned.Amount,
+		rem.Token0.Symbol,
+		rem.Token1Earned.Amount,
+		rem.Token1.Symbol,
+		rem.Token0Earned.Amount*rem.Token0.Price+rem.Token1Earned.Amount*rem.Token1.Price,
+	)
 }
 
 func (add Addition) String() string {
@@ -223,7 +254,12 @@ func (rem Removal) Publish(send analytics.Sender, publishTo string, timestamp ti
 			{Symbol: rem.Token0.Symbol, Amount: rem.Token0.Amount, Price: rem.Token0.Price},
 			{Symbol: rem.Token1.Symbol, Amount: rem.Token1.Amount, Price: rem.Token1.Price},
 		},
-		TxHash: rem.TxHash,
+		Earned: [2]types.TokensEarnedMessage{
+			{Symbol: rem.Token0.Symbol, Amount: rem.Token0Earned.Amount, TotalValueUSD: rem.Token0.Price * rem.Token0Earned.Amount},
+			{Symbol: rem.Token1.Symbol, Amount: rem.Token1Earned.Amount, TotalValueUSD: rem.Token1.Price * rem.Token1Earned.Amount},
+		},
+		ValueEarnedUSD: rem.Token0.Price*rem.Token0Earned.Amount + rem.Token1.Price*rem.Token1Earned.Amount,
+		TxHash:         rem.TxHash,
 	}
 
 	removalJson, err := json.Marshal(&removalMessage)
@@ -263,47 +299,59 @@ func (add Addition) Publish(send analytics.Sender, publishTo string, timestamp t
 // Getting token that was transferred and calculating amount transferred.
 // Keeping track of tokens involved in current Liq. Add. event.
 func (add *Addition) handleLiquidityTransfer(mint EventLog, transfer EventLog) {
-	_, token0HexAmount, token1HexAmount, err := splitMintDatatoHexFields(mint.Data)
+	token0HexAmount, token1HexAmount, err := convertLogDataToHexAmounts(mint.Data, mintEvent)
 	if err != nil {
 		log.Println("Could not split mint event into Amount fields: ", err.Error())
+		return
 	}
 
 	t, err := add.lookupToken(transfer.Address)
 	if err != nil {
 		log.Println("Failed fetching token information: ", err.Error())
+		return
 	}
 
-	if transfer.Data == token0HexAmount {
+	if "0x"+convertHexToBigInt(transfer.Data).Text(16) == token0HexAmount && !strings.EqualFold(transfer.Address, add.Token1.Token.Address) {
 		add.Token0.Token = t
 		add.Token0.Amount = convertTransferAmount(token0HexAmount, t.Decimals)
 	}
 
-	if transfer.Data == token1HexAmount {
+	if "0x"+convertHexToBigInt(transfer.Data).Text(16) == token1HexAmount && !strings.EqualFold(transfer.Address, add.Token0.Token.Address) {
 		add.Token1.Token = t
 		add.Token1.Amount = convertTransferAmount(token1HexAmount, t.Decimals)
 	}
 }
 
+func (rem *Removal) calculateFeesEarned(collectLog EventLog) error {
+	token0HexAmount, token1HexAmount, err := convertLogDataToHexAmounts(collectLog.Data, collectEvent) // Token order original as in liquidity pool
+	if err != nil {
+		return err
+	}
+
+	rem.Token0Earned, rem.Token1Earned = rem.Token0, rem.Token1
+	rem.Token0Earned.Amount = convertTransferAmount(token0HexAmount, rem.Token0.Decimals) - rem.Token0.Amount
+	rem.Token1Earned.Amount = convertTransferAmount(token1HexAmount, rem.Token1.Decimals) - rem.Token1.Amount
+
+	if !rem.Position.isToken0StableAndToken1Native() {
+		rem.Token0Earned, rem.Token1Earned = rem.Token1Earned, rem.Token0Earned
+	}
+
+	return nil
+}
+
 // ----------------------------------------------------------------------
 // --------------- OperationBase methods
 
-func (ob OperationBase) includeTokenPrices(pos *Position) {
+func (ob OperationBase) fetchTokenPrice(tokAddress string) float64 {
 	// Place here to implement price cache?
-	if !strings.EqualFold(pos.Token0.Address, "") {
-		price, err := ob.lookupPrice(pos.Token0.Address)
-		if err != nil {
-			log.Println("failed to feetch Token0 price: ", err.Error())
-		}
-		pos.Token0.Price = price.Value
+	if strings.EqualFold(tokAddress, "") {
+		return 0.0
 	}
-
-	if !strings.EqualFold(pos.Token1.Address, "") {
-		price, err := ob.lookupPrice(pos.Token1.Address)
-		if err != nil {
-			log.Println("failed to feetch Token1 price: ", err.Error())
-		}
-		pos.Token1.Price = price.Value
+	price, err := ob.lookupPrice(tokAddress)
+	if err != nil {
+		log.Println("failed to fetch Token0 price: ", err.Error())
 	}
+	return price.Value
 }
 
 func (op OperationBase) lookupToken(address string) (repository.Token, error) {
@@ -317,12 +365,12 @@ func (op OperationBase) lookupPrice(address string) (repository.TokenPrice, erro
 // ----------------------------------------------------------------------
 // --------------- Position methods
 
-func (pos *Position) calculate() {
+func (pos *Position) calculateRatios() {
 
 	lowerRatio := convertTickToRatio(pos.LowerTick, pos.Token0.Decimals, pos.Token1.Decimals)
 	upperRatio := convertTickToRatio(pos.UpperTick, pos.Token0.Decimals, pos.Token1.Decimals)
 
-	if isStableOrNativeInvolved(*pos) && pos.isOrderCorrect() {
+	if isStableOrNativeInvolved(*pos) && pos.isToken0StableAndToken1Native() {
 		lowerRatio = 1 / lowerRatio
 		upperRatio = 1 / upperRatio
 	}
@@ -333,12 +381,12 @@ func (pos *Position) calculate() {
 	pos.LowerRatio, pos.UpperRatio = lowerRatio, upperRatio
 }
 
-func (pos *Position) calculatePosition() {
+func (pos *Position) calculate() {
 	if !pos.areTokensSet() {
 		return
 	}
 
-	pos.calculate() // Decoding / expanding "Mint" event
+	pos.calculateRatios()
 	pos.adjustOrder()
 
 	if pos.Token0.Price > 0 && pos.Token1.Price > 0 {
@@ -348,7 +396,7 @@ func (pos *Position) calculatePosition() {
 }
 
 func (pos *Position) adjustOrder() {
-	if isStableOrNativeInvolved(*pos) && pos.isOrderCorrect() {
+	if isStableOrNativeInvolved(*pos) && !pos.isToken0StableAndToken1Native() {
 		pos.Token1, pos.Token0 = pos.Token0, pos.Token1
 	}
 }
@@ -396,6 +444,10 @@ func (p Position) CanPublish() bool {
 		log.Printf("SKIP - no tokens moved. Tx: %s\n\n", p.TxHash)
 		return false
 	}
+	if p.Token0.Price == 0.0 || p.Token1.Price == 0.0 {
+		log.Printf("SKIP - missing price (could not calculate current ratio). Tx: %s\n\n", p.TxHash)
+		return false
+	}
 
 	return true
 }
@@ -404,7 +456,7 @@ func (p Position) areTokensSet() bool {
 	return (!strings.EqualFold(p.Token0.Address, "") && !strings.EqualFold(p.Token1.Address, ""))
 }
 
-func (p Position) isOrderCorrect() bool {
+func (p Position) isToken0StableAndToken1Native() bool {
 	return (strings.EqualFold(p.Token1.Address, addressWETH) || strings.EqualFold(p.Token0.Address, addressUSDC) || strings.EqualFold(p.Token0.Address, addressUSDT))
 }
 

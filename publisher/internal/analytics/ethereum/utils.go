@@ -70,7 +70,7 @@ func (a *Analytics) newWrappedEventLog(eLog EventLog) WrappedEventLog {
 	switch {
 	case eLog.isTransfer():
 		wel.Instructions = EventInstruction{
-			Name:      "TRANSFER",
+			Name:      transferEvent,
 			Header:    transferEventHeader,
 			Signature: transferSig,
 			Operation: nil,
@@ -78,7 +78,7 @@ func (a *Analytics) newWrappedEventLog(eLog EventLog) WrappedEventLog {
 		}
 	case eLog.isMint():
 		wel.Instructions = EventInstruction{
-			Name:      "ADDITION",
+			Name:      mintEvent,
 			Header:    mintEventHeader,
 			Signature: mintSig,
 			Operation: &Addition{OperationBase: initOpBase},
@@ -86,9 +86,15 @@ func (a *Analytics) newWrappedEventLog(eLog EventLog) WrappedEventLog {
 		}
 	case eLog.isBurn():
 		wel.Instructions = EventInstruction{
-			Name:      "REMOVAL",
+			Name:      burnEvent,
 			Header:    burnEventHeader,
 			Signature: burnSig,
+		}
+	case eLog.isCollect():
+		wel.Instructions = EventInstruction{
+			Name:      collectEvent,
+			Header:    collectEventHeader,
+			Signature: collectSig,
 			Operation: &Removal{OperationBase: initOpBase},
 			PublishTo: "remove",
 		}
