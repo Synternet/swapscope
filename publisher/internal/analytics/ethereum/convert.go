@@ -65,6 +65,14 @@ func parseEventLogMessage(data []byte) (EventLog, error) {
 	return eLog, nil
 }
 
+func parseJsonToAbi(jsonABI string) abi.ABI {
+	abi, err := abi.JSON(strings.NewReader(jsonABI))
+	if err != nil {
+		log.Fatal(err)
+	}
+	return abi
+}
+
 // convertTransferAmount converts Transfer's hex amount into scaled actual amount of tokens
 func convertTransferAmount(amountHex string, decimals int) float64 {
 	amount := convertHexToBigInt(amountHex)

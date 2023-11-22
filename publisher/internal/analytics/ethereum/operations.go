@@ -199,7 +199,7 @@ func (add *Addition) Process(mint WrappedEventLog) error {
 }
 
 func (add Addition) savePool(addPos Position) error {
-	if addPos.isEitherTokenAmountZero() || !addPos.areTokensSet() {
+	if addPos.isEitherTokenAmountZero() || !addPos.areTokensSet() || (addPos.Token0.Address == addPos.Token1.Address) {
 		return nil
 	}
 	// In this case both tokens were transferred to LP and their order is correct
@@ -332,7 +332,7 @@ func (rem *Removal) calculateFeesEarned(collectLog EventLog) error {
 	rem.Token0Earned.Amount = convertTransferAmount(token0HexAmount, rem.Token0.Decimals) - rem.Token0.Amount
 	rem.Token1Earned.Amount = convertTransferAmount(token1HexAmount, rem.Token1.Decimals) - rem.Token1.Amount
 
-	if !rem.Position.isStableOrNativeInCorrectPosition() {
+	if !rem.Position.isToken0StableAndToken1Native() {
 		rem.Token0Earned, rem.Token1Earned = rem.Token1Earned, rem.Token0Earned
 	}
 
@@ -370,7 +370,7 @@ func (pos *Position) calculateRatios() {
 	lowerRatio := convertTickToRatio(pos.LowerTick, pos.Token0.Decimals, pos.Token1.Decimals)
 	upperRatio := convertTickToRatio(pos.UpperTick, pos.Token0.Decimals, pos.Token1.Decimals)
 
-	if isStableOrNativeInvolved(*pos) && pos.isStableOrNativeInCorrectPosition() {
+	if isStableOrNativeInvolved(*pos) && pos.isToken0StableAndToken1Native() {
 		lowerRatio = 1 / lowerRatio
 		upperRatio = 1 / upperRatio
 	}
@@ -396,7 +396,7 @@ func (pos *Position) calculate() {
 }
 
 func (pos *Position) adjustOrder() {
-	if isStableOrNativeInvolved(*pos) && !pos.isStableOrNativeInCorrectPosition() {
+	if isStableOrNativeInvolved(*pos) && !pos.isToken0StableAndToken1Native() {
 		pos.Token1, pos.Token0 = pos.Token0, pos.Token1
 	}
 }
@@ -456,7 +456,7 @@ func (p Position) areTokensSet() bool {
 	return (!strings.EqualFold(p.Token0.Address, "") && !strings.EqualFold(p.Token1.Address, ""))
 }
 
-func (p Position) isStableOrNativeInCorrectPosition() bool {
+func (p Position) isToken0StableAndToken1Native() bool {
 	return (strings.EqualFold(p.Token1.Address, addressWETH) || strings.EqualFold(p.Token0.Address, addressUSDC) || strings.EqualFold(p.Token0.Address, addressUSDT))
 }
 

@@ -168,7 +168,7 @@ func Test_hasTopics(t *testing.T) {
 	}
 }
 
-func Test_isStableOrNativeInCorrectPosition(t *testing.T) {
+func Test_isToken0StableAndToken1Native(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   Position
@@ -185,7 +185,7 @@ func Test_isStableOrNativeInCorrectPosition(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res := test.input.isStableOrNativeInCorrectPosition()
+			res := test.input.isToken0StableAndToken1Native()
 			if res != test.trueRes {
 				t.Errorf("isOrderCorrect(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
 			}

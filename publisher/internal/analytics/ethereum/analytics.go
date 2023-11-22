@@ -2,9 +2,8 @@ package ethereum
 
 import (
 	"context"
+	_ "embed"
 	"errors"
-	"log"
-	"os"
 
 	"github.com/SyntropyNet/swapscope/publisher/pkg/analytics"
 	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
@@ -13,12 +12,18 @@ import (
 )
 
 var (
-	mintSig                string
-	transferSig            string
-	burnSig                string
-	collectSig             string
+	mintSig     string
+	transferSig string
+	burnSig     string
+	collectSig  string
+
+	//go:embed Uniswap_Liquidity_Pool_contract.json
+	uniswapLiqPoolsABIJson string
 	uniswapLiqPoolsABI     abi.ABI
-	uniswapLiqPositionsABI abi.ABI
+
+	//go:embed Uniswap_Liquidity_Position_contract.json
+	uniswapLiqPositionsABIJson string
+	uniswapLiqPositionsABI     abi.ABI
 )
 
 const (
@@ -75,8 +80,8 @@ func New(ctx context.Context, db repository.Repository, opts ...Option) (*Analyt
 
 	ret.eventLogCache = &EventLogCache{cache.New(ret.Options.eventLogCacheExpirationTime, ret.Options.eventLogCachePurgeTime)}
 
-	uniswapLiqPoolsABI = readABI("./internal/analytics/ethereum/Uniswap_Liquidity_Pool_contract.json")
-	uniswapLiqPositionsABI = readABI("./internal/analytics/ethereum/Uniswap_Liquidity_Position_contract.json")
+	uniswapLiqPoolsABI = parseJsonToAbi(uniswapLiqPoolsABIJson)
+	uniswapLiqPositionsABI = parseJsonToAbi(uniswapLiqPositionsABIJson)
 
 	return ret, nil
 }
@@ -85,16 +90,4 @@ func (a *Analytics) Handlers() map[string]analytics.Handler {
 	return map[string]analytics.Handler{
 		subSubject: a.ProcessMessage,
 	}
-}
-
-func readABI(path string) abi.ABI {
-	reader, err := os.Open(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	abi, err := abi.JSON(reader)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return abi
 }
