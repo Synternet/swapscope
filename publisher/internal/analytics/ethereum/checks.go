@@ -12,10 +12,21 @@ func isUniswapPositionsNFT(address string) bool {
 	return false
 }
 
-func isStableOrNativeInvolved(position Position) bool {
+func isStableInvolved(position Position) bool {
 	token0 := position.Token0
 	token1 := position.Token1
-	for _, address := range []string{addressWETH, addressUSDC, addressUSDT} {
+	for _, address := range stableCoins {
+		if strings.EqualFold(token1.Address, address) || strings.EqualFold(token0.Address, address) {
+			return true
+		}
+	}
+	return false
+}
+
+func isNativeInvolved(position Position) bool {
+	token0 := position.Token0
+	token1 := position.Token1
+	for _, address := range nativeCoins {
 		if strings.EqualFold(token1.Address, address) || strings.EqualFold(token0.Address, address) {
 			return true
 		}
