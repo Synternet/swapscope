@@ -375,9 +375,8 @@ func (pos *Position) calculateRatios() {
 	lowerRatio := convertTickToRatio(pos.LowerTick, pos.Token0.Decimals, pos.Token1.Decimals)
 	upperRatio := convertTickToRatio(pos.UpperTick, pos.Token0.Decimals, pos.Token1.Decimals)
 
-	if (isStableInvolved(*pos) && isNativeInvolved(*pos) && !pos.isToken1Stable()) || // USDC/T + WETH, case: WETH/USDT
-		(!isStableInvolved(*pos) && isNativeInvolved(*pos) && !pos.isToken1Native()) || // ANY + WETH, case: WETH/ANY
-		(isStableInvolved(*pos) && !isNativeInvolved(*pos) && !pos.isToken1Stable()) { // ANY + USDC/T, case: USD_/ANY
+	if (isStableInvolved(*pos) && !pos.isToken1Stable()) || // Stable (USDC, USDT) to always be quote token (second)
+		(!isStableInvolved(*pos) && isNativeInvolved(*pos) && !pos.isToken1Native()) { // If there is no stable token involved - WETH will always be quoto token
 		lowerRatio = 1 / lowerRatio
 		upperRatio = 1 / upperRatio
 	}
