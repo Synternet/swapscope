@@ -185,7 +185,7 @@ func Test_isToken1Native(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res := test.input.isToken1Native()
+			res := test.input.isToken1OneOf(nativeCoins)
 			if res != test.trueRes {
 				t.Errorf("isToken1Native(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
 			}
@@ -210,7 +210,7 @@ func Test_isToken1Stable(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res := test.input.isToken1Stable()
+			res := test.input.isToken1OneOf(stableCoins)
 			if res != test.trueRes {
 				t.Errorf("isToken1Stable(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
 			}
@@ -231,7 +231,7 @@ func Test_isNativeInvolved(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res := isNativeInvolved(test.input)
+			res := test.input.isAnyTokenOneOf(nativeCoins)
 			if res != test.trueRes {
 				t.Errorf("isNativeInvolved(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
 			}
@@ -252,7 +252,7 @@ func Test_isStableInvolved(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res := isStableInvolved(test.input)
+			res := test.input.isAnyTokenOneOf(stableCoins)
 			if res != test.trueRes {
 				t.Errorf("isStableInvolved(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
 			}

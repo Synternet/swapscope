@@ -375,8 +375,8 @@ func (pos *Position) calculateRatios() {
 	lowerRatio := convertTickToRatio(pos.LowerTick, pos.Token0.Decimals, pos.Token1.Decimals)
 	upperRatio := convertTickToRatio(pos.UpperTick, pos.Token0.Decimals, pos.Token1.Decimals)
 
-	if (isStableInvolved(*pos) && !pos.isToken1Stable()) || // Stable (USDC, USDT) to always be quote token (second)
-		(!isStableInvolved(*pos) && isNativeInvolved(*pos) && !pos.isToken1Native()) { // If there is no stable token involved - WETH will always be quoto token
+	if (pos.isAnyTokenOneOf(stableCoins) && !pos.isToken1OneOf(stableCoins)) || // Stable (USDC, USDT) to always be quote token (second)
+		(!pos.isAnyTokenOneOf(stableCoins) && pos.isAnyTokenOneOf(nativeCoins) && !pos.isToken1OneOf(nativeCoins)) { // If there is no stable token involved - WETH will always be quoto token
 		lowerRatio = 1 / lowerRatio
 		upperRatio = 1 / upperRatio
 	}
@@ -401,8 +401,8 @@ func (pos *Position) calculate() {
 }
 
 func (pos *Position) adjustOrder() {
-	if (isNativeInvolved(*pos) && !isStableInvolved(*pos) && !pos.isToken1Native()) ||
-		(isStableInvolved(*pos) && !pos.isToken1Stable()) {
+	if (pos.isAnyTokenOneOf(nativeCoins) && !pos.isAnyTokenOneOf(stableCoins) && !pos.isToken1OneOf(nativeCoins)) ||
+		(pos.isAnyTokenOneOf(stableCoins) && !pos.isToken1OneOf(stableCoins)) {
 		pos.Token1, pos.Token0 = pos.Token0, pos.Token1
 	}
 }
@@ -454,7 +454,7 @@ func (p Position) CanPublish() bool {
 		log.Printf("SKIP - missing price (could not calculate current ratio). Tx: %s\n\n", p.TxHash)
 		return false
 	}
-	if !isNativeInvolved(p) && !isStableInvolved(p) {
+	if !p.isAnyTokenOneOf(nativeCoins) && !p.isAnyTokenOneOf(stableCoins) {
 		log.Printf("SKIP - no stable or native currency involved. Tx: %s\n\n", p.TxHash)
 		return false
 	}
@@ -465,14 +465,18 @@ func (p Position) areTokensSet() bool {
 	return (!strings.EqualFold(p.Token0.Address, "") && !strings.EqualFold(p.Token1.Address, ""))
 }
 
-func (p Position) isToken1Stable() bool {
-	return slices.Contains(stableCoins, strings.ToLower(p.Token1.Address))
-}
-
-func (p Position) isToken1Native() bool {
-	return slices.Contains(nativeCoins, strings.ToLower(p.Token1.Address))
-}
-
 func (p Position) isEitherTokenAmountZero() bool {
 	return (p.Token0.Amount == 0 || p.Token1.Amount == 0)
+}
+
+func (p Position) isToken1OneOf(tokens []string) bool {
+	return slices.Contains(tokens, strings.ToLower(p.Token1.Address))
+}
+
+func (p Position) isToken0OneOf(tokens []string) bool {
+	return slices.Contains(tokens, strings.ToLower(p.Token0.Address))
+}
+
+func (p Position) isAnyTokenOneOf(tokens []string) bool {
+	return p.isToken0OneOf(tokens) || p.isToken1OneOf(tokens)
 }

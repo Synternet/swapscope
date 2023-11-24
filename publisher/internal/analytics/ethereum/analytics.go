@@ -65,8 +65,8 @@ func init() {
 	burnSig = convertToEventSignature(burnEventHeader)
 	collectSig = convertToEventSignature(collectEventHeader)
 
-	stableCoins = append(stableCoins, strings.ToLower(addressUSDT), strings.ToLower(addressUSDC))
-	nativeCoins = append(nativeCoins, strings.ToLower(addressWETH))
+	stableCoins = []string{strings.ToLower(addressUSDT), strings.ToLower(addressUSDC)}
+	nativeCoins = []string{strings.ToLower(addressWETH)}
 }
 
 func New(ctx context.Context, db repository.Repository, opts ...Option) (*Analytics, error) {
