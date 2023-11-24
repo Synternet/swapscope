@@ -10,6 +10,7 @@ import (
 	"github.com/SyntropyNet/swapscope/publisher/pkg/analytics"
 	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
 	"github.com/SyntropyNet/swapscope/publisher/pkg/types"
+	"golang.org/x/exp/slices"
 )
 
 type Fetchers struct {
@@ -152,11 +153,13 @@ func (rem *Removal) Process(collect WrappedEventLog) error {
 	rem.Position = *remPosition
 	rem.Token0.Price = rem.fetchTokenPrice(rem.Token0.Address)
 	rem.Token1.Price = rem.fetchTokenPrice(rem.Token1.Address)
-	err = rem.calculateFeesEarned(collect.Log)
+
+	rem.Position.calculate()
+
+	err = rem.calculateFeesEarned(collect.Log, addr0, addr1)
 	if err != nil {
 		return err
 	}
-	rem.Position.calculate()
 	return nil
 }
 
@@ -322,19 +325,21 @@ func (add *Addition) handleLiquidityTransfer(mint EventLog, transfer EventLog) {
 	}
 }
 
-func (rem *Removal) calculateFeesEarned(collectLog EventLog) error {
+func (rem *Removal) calculateFeesEarned(collectLog EventLog, poolOrderToken0 string, poolOrderToken1 string) error {
 	token0HexAmount, token1HexAmount, err := convertLogDataToHexAmounts(collectLog.Data, collectEvent) // Token order original as in liquidity pool
 	if err != nil {
 		return err
 	}
 
 	rem.Token0Earned, rem.Token1Earned = rem.Token0, rem.Token1
+
+	if strings.EqualFold(rem.Token0.Address, poolOrderToken1) && strings.EqualFold(rem.Token1.Address, poolOrderToken0) {
+		rem.Token0Earned, rem.Token1Earned = rem.Token1Earned, rem.Token0Earned // Removed tokens were switched during processing - switch earned tokens as well
+		token0HexAmount, token1HexAmount = token1HexAmount, token0HexAmount
+	}
+
 	rem.Token0Earned.Amount = convertTransferAmount(token0HexAmount, rem.Token0.Decimals) - rem.Token0.Amount
 	rem.Token1Earned.Amount = convertTransferAmount(token1HexAmount, rem.Token1.Decimals) - rem.Token1.Amount
-
-	if !rem.Position.isToken0StableAndToken1Native() {
-		rem.Token0Earned, rem.Token1Earned = rem.Token1Earned, rem.Token0Earned
-	}
 
 	return nil
 }
@@ -370,11 +375,11 @@ func (pos *Position) calculateRatios() {
 	lowerRatio := convertTickToRatio(pos.LowerTick, pos.Token0.Decimals, pos.Token1.Decimals)
 	upperRatio := convertTickToRatio(pos.UpperTick, pos.Token0.Decimals, pos.Token1.Decimals)
 
-	if isStableOrNativeInvolved(*pos) && pos.isToken0StableAndToken1Native() {
+	if (pos.isAnyTokenOneOf(stableCoins) && !pos.isToken1OneOf(stableCoins)) || // Stable (USDC, USDT) to always be quote token (second)
+		(!pos.isAnyTokenOneOf(stableCoins) && pos.isAnyTokenOneOf(nativeCoins) && !pos.isToken1OneOf(nativeCoins)) { // If there is no stable token involved - WETH will always be quoto token
 		lowerRatio = 1 / lowerRatio
 		upperRatio = 1 / upperRatio
 	}
-
 	if lowerRatio > upperRatio {
 		lowerRatio, upperRatio = upperRatio, lowerRatio
 	}
@@ -390,13 +395,14 @@ func (pos *Position) calculate() {
 	pos.adjustOrder()
 
 	if pos.Token0.Price > 0 && pos.Token1.Price > 0 {
-		pos.CurrentRatio = pos.Token1.Price / pos.Token0.Price
+		pos.CurrentRatio = pos.Token0.Price / pos.Token1.Price
 	}
 	pos.TotalValue = pos.Token1.Price*pos.Token1.Amount + pos.Token0.Price*pos.Token0.Amount
 }
 
 func (pos *Position) adjustOrder() {
-	if isStableOrNativeInvolved(*pos) && !pos.isToken0StableAndToken1Native() {
+	if (pos.isAnyTokenOneOf(nativeCoins) && !pos.isAnyTokenOneOf(stableCoins) && !pos.isToken1OneOf(nativeCoins)) ||
+		(pos.isAnyTokenOneOf(stableCoins) && !pos.isToken1OneOf(stableCoins)) {
 		pos.Token1, pos.Token0 = pos.Token0, pos.Token1
 	}
 }
@@ -448,7 +454,10 @@ func (p Position) CanPublish() bool {
 		log.Printf("SKIP - missing price (could not calculate current ratio). Tx: %s\n\n", p.TxHash)
 		return false
 	}
-
+	if !p.isAnyTokenOneOf(nativeCoins) && !p.isAnyTokenOneOf(stableCoins) {
+		log.Printf("SKIP - no stable or native currency involved. Tx: %s\n\n", p.TxHash)
+		return false
+	}
 	return true
 }
 
@@ -456,10 +465,18 @@ func (p Position) areTokensSet() bool {
 	return (!strings.EqualFold(p.Token0.Address, "") && !strings.EqualFold(p.Token1.Address, ""))
 }
 
-func (p Position) isToken0StableAndToken1Native() bool {
-	return (strings.EqualFold(p.Token1.Address, addressWETH) || strings.EqualFold(p.Token0.Address, addressUSDC) || strings.EqualFold(p.Token0.Address, addressUSDT))
-}
-
 func (p Position) isEitherTokenAmountZero() bool {
 	return (p.Token0.Amount == 0 || p.Token1.Amount == 0)
+}
+
+func (p Position) isToken1OneOf(tokens []string) bool {
+	return slices.Contains(tokens, strings.ToLower(p.Token1.Address))
+}
+
+func (p Position) isToken0OneOf(tokens []string) bool {
+	return slices.Contains(tokens, strings.ToLower(p.Token0.Address))
+}
+
+func (p Position) isAnyTokenOneOf(tokens []string) bool {
+	return p.isToken0OneOf(tokens) || p.isToken1OneOf(tokens)
 }

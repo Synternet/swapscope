@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"errors"
+	"strings"
 
 	"github.com/SyntropyNet/swapscope/publisher/pkg/analytics"
 	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
@@ -24,6 +25,9 @@ var (
 	//go:embed Uniswap_Liquidity_Position_contract.json
 	uniswapLiqPositionsABIJson string
 	uniswapLiqPositionsABI     abi.ABI
+
+	stableCoins []string
+	nativeCoins []string
 )
 
 const (
@@ -60,6 +64,9 @@ func init() {
 	transferSig = convertToEventSignature(transferEventHeader)
 	burnSig = convertToEventSignature(burnEventHeader)
 	collectSig = convertToEventSignature(collectEventHeader)
+
+	stableCoins = []string{strings.ToLower(addressUSDT), strings.ToLower(addressUSDC)}
+	nativeCoins = []string{strings.ToLower(addressWETH)}
 }
 
 func New(ctx context.Context, db repository.Repository, opts ...Option) (*Analytics, error) {

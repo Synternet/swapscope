@@ -28,15 +28,15 @@ func Test_tickConversion(t *testing.T) {
 		trueLowerRatio float64
 		trueUpperRatio float64
 	}{
-		{"Custom/native: Ticks > 0, res ratio < 1, low range", &Position{Token0: knownTokens["WBTC"], Token1: knownTokens["WETH"], LowerTick: 259720, UpperTick: 259750}, 0.052452336044, 0.052609921433}, // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/591227
-		{"Custom/native: Ticks > 0, res ratio < 1, big range", &Position{Token0: knownTokens["WBTC"], Token1: knownTokens["WETH"], LowerTick: 258310, UpperTick: 259930}, 0.051516686880, 0.060575933233}, //
-		{"Custom/native: Ticks < 0, low range", &Position{Token0: knownTokens["MATIC"], Token1: knownTokens["WETH"], LowerTick: -79980, UpperTick: -79500}, 2834.4481085213397, 2973.812642817363},        // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/587211
-		{"Custom/native: Ticks < 0, big range", &Position{Token0: knownTokens["MATIC"], Token1: knownTokens["WETH"], LowerTick: -90240, UpperTick: -78420}, 2544.292581085861, 8296.166586725507},         // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/587556
-		{"Stable/native: Ticks > 0, big range", &Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"], LowerTick: 186220, UpperTick: 201460}, 1782.956728761764, 8184.129686609503},          // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593545
-		{"Stable/native: Ticks > 0, big range", &Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"], LowerTick: 201450, UpperTick: 203190}, 1499.724941901797, 1784.7404880350452},         // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593547
-		{"Stable/native: Ticks > 0, low range", &Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"], LowerTick: 201090, UpperTick: 201650}, 1749.4020078533288, 1850.158331324582},         // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593603
-		{"Native/stable: Ticks < 0, big range", &Position{Token0: knownTokens["WETH"], Token1: knownTokens["USDT"], LowerTick: -204660, UpperTick: -197760}, 1294.7130255963305, 2581.2004232087493},      // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593557
-		{"Native/stable: Ticks < 0, low range", &Position{Token0: knownTokens["WETH"], Token1: knownTokens["USDT"], LowerTick: -201480, UpperTick: -201470}, 1779.3945567691965, 1781.1747522670805},      // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593392
+		{"Custom/native: Ticks > 0, res ratio < 1, low range", &Position{Token0: knownTokens["WBTC"], Token1: knownTokens["WETH"], LowerTick: 259720, UpperTick: 259750}, 19.007821581, 19.064927807},   // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/591227
+		{"Custom/native: Ticks > 0, res ratio < 1, big range", &Position{Token0: knownTokens["WBTC"], Token1: knownTokens["WETH"], LowerTick: 258310, UpperTick: 259930}, 16.5082062564, 19.4111861717}, //
+		{"Custom/native: Ticks < 0, low range", &Position{Token0: knownTokens["MATIC"], Token1: knownTokens["WETH"], LowerTick: -79980, UpperTick: -79500}, 0.0003362686625, 0.00035280236635},          // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/587211
+		{"Custom/native: Ticks < 0, big range", &Position{Token0: knownTokens["MATIC"], Token1: knownTokens["WETH"], LowerTick: -90240, UpperTick: -78420}, 0.00012053759884, 0.000393036558},           // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/587556
+		{"Stable/native: Ticks > 0, big range", &Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"], LowerTick: 186220, UpperTick: 201460}, 1782.956728761764, 8184.129686609503},        // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593545
+		{"Stable/native: Ticks > 0, big range", &Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"], LowerTick: 201450, UpperTick: 203190}, 1499.724941901797, 1784.7404880350452},       // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593547
+		{"Stable/native: Ticks > 0, low range", &Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"], LowerTick: 201090, UpperTick: 201650}, 1749.4020078533288, 1850.158331324582},       // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593603
+		{"Native/stable: Ticks < 0, big range", &Position{Token0: knownTokens["WETH"], Token1: knownTokens["USDT"], LowerTick: -204660, UpperTick: -197760}, 1294.7130255963305, 2581.2004232087493},    // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593557
+		{"Native/stable: Ticks < 0, low range", &Position{Token0: knownTokens["WETH"], Token1: knownTokens["USDT"], LowerTick: -201480, UpperTick: -201470}, 1779.3945567691965, 1781.1747522670805},    // https://etherscan.io/nft/0xc36442b4a4522e871399cd717abdd847ab11fe88/593392
 	}
 
 	for _, test := range tests {
@@ -168,7 +168,7 @@ func Test_hasTopics(t *testing.T) {
 	}
 }
 
-func Test_isToken0StableAndToken1Native(t *testing.T) {
+func Test_isToken1Native(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   Position
@@ -180,20 +180,45 @@ func Test_isToken0StableAndToken1Native(t *testing.T) {
 		{"stable/native", Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"]}, true},
 		{"native/stable", Position{Token0: knownTokens["WETH"], Token1: knownTokens["USDC"]}, false},
 		{"native/stable", Position{Token0: knownTokens["WETH"], Token1: knownTokens["USDT"]}, false},
-		{"stable/stable", Position{Token0: knownTokens["USDC"], Token1: knownTokens["USDT"]}, true},
-		{"stable/stable", Position{Token0: knownTokens["USDT"], Token1: knownTokens["USDC"]}, true},
+		{"stable/stable", Position{Token0: knownTokens["USDC"], Token1: knownTokens["USDT"]}, false},
+		{"stable/stable", Position{Token0: knownTokens["USDT"], Token1: knownTokens["USDC"]}, false},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res := test.input.isToken0StableAndToken1Native()
+			res := test.input.isToken1OneOf(nativeCoins)
 			if res != test.trueRes {
-				t.Errorf("isOrderCorrect(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
+				t.Errorf("isToken1Native(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
 			}
 		})
 	}
 }
 
-func Test_isStableOrNativeInvolved(t *testing.T) {
+func Test_isToken1Stable(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   Position
+		trueRes bool
+	}{
+		{"native/custom", Position{Token0: knownTokens["WETH"], Token1: knownTokens["WBTC"]}, false},
+		{"custom/native", Position{Token0: knownTokens["WBTC"], Token1: knownTokens["WETH"]}, false},
+		{"custom/native", Position{Token0: knownTokens["MATIC"], Token1: knownTokens["WETH"]}, false},
+		{"stable/native", Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"]}, false},
+		{"native/stable", Position{Token0: knownTokens["WETH"], Token1: knownTokens["USDC"]}, true},
+		{"native/stable", Position{Token0: knownTokens["WETH"], Token1: knownTokens["USDT"]}, true},
+		{"stable/stable", Position{Token0: knownTokens["USDC"], Token1: knownTokens["USDT"]}, true},
+		{"stable/stable", Position{Token0: knownTokens["USDT"], Token1: knownTokens["USDC"]}, true},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			res := test.input.isToken1OneOf(stableCoins)
+			if res != test.trueRes {
+				t.Errorf("isToken1Stable(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
+			}
+		})
+	}
+}
+
+func Test_isNativeInvolved(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   Position
@@ -202,13 +227,34 @@ func Test_isStableOrNativeInvolved(t *testing.T) {
 		{"custom/native", Position{Token0: knownTokens["WBTC"], Token1: knownTokens["WETH"]}, true},
 		{"stable/native", Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"]}, true},
 		{"custom/custom", Position{Token0: knownTokens["WBTC"], Token1: knownTokens["PEPE"]}, false},
+		{"stable/custom", Position{Token0: knownTokens["USDC"], Token1: knownTokens["PEPE"]}, false},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			res := test.input.isAnyTokenOneOf(nativeCoins)
+			if res != test.trueRes {
+				t.Errorf("isNativeInvolved(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
+			}
+		})
+	}
+}
+
+func Test_isStableInvolved(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   Position
+		trueRes bool
+	}{
+		{"custom/native", Position{Token0: knownTokens["WBTC"], Token1: knownTokens["WETH"]}, false},
+		{"stable/native", Position{Token0: knownTokens["USDC"], Token1: knownTokens["WETH"]}, true},
+		{"custom/custom", Position{Token0: knownTokens["WBTC"], Token1: knownTokens["PEPE"]}, false},
 		{"stable/custom", Position{Token0: knownTokens["USDC"], Token1: knownTokens["PEPE"]}, true},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res := isStableOrNativeInvolved(test.input)
+			res := test.input.isAnyTokenOneOf(stableCoins)
 			if res != test.trueRes {
-				t.Errorf("isStableOrNativeInvolved(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
+				t.Errorf("isStableInvolved(%v) = (%v); expected (%v)", test.input, res, test.trueRes)
 			}
 		})
 	}

@@ -10,6 +10,7 @@ require (
 	github.com/nats-io/nats.go v1.24.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	golang.org/x/crypto v0.12.0
+	golang.org/x/exp v0.0.0-20230810033253-352e893a4cad
 	golang.org/x/sync v0.3.0
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/gorm v1.25.4
@@ -42,7 +43,6 @@ require (
 	github.com/supranational/blst v0.3.11 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
-	golang.org/x/exp v0.0.0-20230810033253-352e893a4cad // indirect
 	golang.org/x/mod v0.11.0 // indirect
 	golang.org/x/sys v0.11.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
