@@ -37,7 +37,7 @@ type Cache interface {
 }
 
 type Operation interface {
-	// Common methods shared by Addition and Removal
+	// Common methods shared by Addition, Removal and Swap
 	Process(WrappedEventLog) error
 	String() string
 	CanPublish() bool
@@ -58,6 +58,94 @@ type Addition struct {
 	Position
 	OperationBase
 	Send analytics.Sender
+}
+
+type Swap struct {
+	Position
+	From TokenTransaction
+	To   TokenTransaction
+	OperationBase
+	Send analytics.Sender
+}
+
+func (sw Swap) Save(ts time.Time) error {
+	return nil
+}
+func (sw *Swap) Process(swap WrappedEventLog) error {
+	swapLog := swap.Log
+	addr0, addr1, found := sw.db.GetPoolPairAddresses(swapLog.Address)
+	if !found {
+		//return fmt.Errorf("(swap) token pair of pool %s not found in DB.", wel.Log.Address)
+		return nil
+	}
+	token0, found0 := sw.db.GetToken(addr0)
+	token1, found1 := sw.db.GetToken(addr1)
+	if !found0 || !found1 {
+		return fmt.Errorf("SKIP (swap) - at least one token is unknown. Pool address: %s", swapLog.Address)
+	}
+
+	hexAmount0, hexAmount1, err := convertLogDataToHexAmounts(swapLog.Data, swap.Instructions.Name)
+	if err != nil {
+		return err
+	}
+
+	swapPosition := &Position{
+		Address: swapLog.Address,
+		TxHash:  swapLog.TransactionHash,
+		Token0: TokenTransaction{
+			Token:  token0,
+			Amount: convertTransferAmount(hexAmount0, token0.Decimals),
+		},
+		Token1: TokenTransaction{
+			Token:  token1,
+			Amount: convertTransferAmount(hexAmount1, token1.Decimals),
+		},
+	}
+	sw.Position = *swapPosition
+	sw.Position.adjustOrder()
+
+	if sw.Token0.Amount < 0 && sw.Token1.Amount > 0 {
+		sw.From, sw.To = sw.Token0, sw.Token1
+	} else if sw.Token1.Amount < 0 && sw.Token0.Amount > 0 {
+		sw.From, sw.To = sw.Token1, sw.Token0
+	} else {
+		return fmt.Errorf("both token amounts are below 0 in swap. TX: %s", sw.TxHash)
+	}
+	sw.From.Amount = sw.From.Amount * (-1)
+
+	return nil
+}
+
+func (sw Swap) String() string {
+	format := "Swapping %f of %s to %f of %s."
+	return fmt.Sprintf(format,
+		sw.From.Amount,
+		sw.To.Symbol,
+		sw.From.Amount,
+		sw.To.Symbol)
+}
+
+func (sw Swap) CanPublish() bool {
+	log.Println("TODO: Check if swap can be published.")
+	return true
+}
+
+func (sw Swap) Publish(send analytics.Sender, publishTo string, timestamp time.Time) error {
+	swapMessage := types.SwapMessage{
+		Timestamp: timestamp,
+		TxHash:    sw.TxHash,
+		Address:   sw.Address,
+		From:      types.TokenMessage{Symbol: sw.From.Symbol, Amount: sw.From.Amount},
+		To:        types.TokenMessage{Symbol: sw.To.Symbol, Amount: sw.To.Amount},
+	}
+
+	removalJson, err := json.Marshal(&swapMessage)
+	if err != nil {
+		return fmt.Errorf("error marshalling Liquidity Removal object into a json message: %s", err)
+	}
+
+	streamName := strings.ToLower(fmt.Sprintf("%s.%s.%s", publishTo, sw.Token0.Symbol, sw.Token1.Symbol))
+	return send(removalJson, streamName)
 }
 
 func (rem Removal) Save(ts time.Time) error {

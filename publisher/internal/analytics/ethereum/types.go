@@ -74,3 +74,7 @@ func (el *EventLog) isBurn() bool {
 func (el *EventLog) isCollect() bool {
 	return strings.HasPrefix(el.Topics[0], collectSig)
 }
+
+func (el *EventLog) isSwap() bool {
+	return strings.HasPrefix(el.Topics[0], swapSig)
+}

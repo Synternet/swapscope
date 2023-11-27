@@ -28,10 +28,18 @@ type RemovalMessage struct {
 	TxHash            string                 `json:"txHash"`
 }
 
+type SwapMessage struct {
+	Timestamp time.Time    `json:"timestamp"`
+	Address   string       `json:"address"`
+	TxHash    string       `json:"txHash"`
+	From      TokenMessage `json:"from"`
+	To        TokenMessage `json:"to"`
+}
+
 type TokenMessage struct {
 	Symbol string  `json:"symbol"`
 	Amount float64 `json:"amount"`
-	Price  float64 `json:"priceUSD"`
+	Price  float64 `json:"priceUSD,omitempty"`
 }
 
 type TokensEarnedMessage struct {
