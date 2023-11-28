@@ -75,9 +75,7 @@ func (sw *Swap) Process(swap WrappedEventLog) error {
 	swapLog := swap.Log
 	addr0, addr1, found := sw.db.GetPoolPairAddresses(swapLog.Address)
 	if !found {
-		unknownAddressOccurrences[strings.ToLower(swapLog.Address)]++
-		unknownAddressTotalOccurences++
-		return fmt.Errorf("(swap) pool unknown? %s (%v/%v)", swapLog.Address, unknownAddressOccurrences[strings.ToLower(swapLog.Address)], unknownAddressTotalOccurences)
+		return fmt.Errorf("(swap) pool unknown? %s", swapLog.Address)
 	}
 	token0, found0 := sw.db.GetToken(addr0)
 	token1, found1 := sw.db.GetToken(addr1)

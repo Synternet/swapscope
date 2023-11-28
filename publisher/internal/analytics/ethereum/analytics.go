@@ -29,9 +29,6 @@ var (
 
 	stableCoins []string
 	nativeCoins []string
-
-	unknownAddressOccurrences     map[string]int
-	unknownAddressTotalOccurences int
 )
 
 const (
@@ -75,7 +72,6 @@ func init() {
 	stableCoins = []string{strings.ToLower(addressUSDT), strings.ToLower(addressUSDC)}
 	nativeCoins = []string{strings.ToLower(addressWETH)}
 
-	unknownAddressOccurrences = make(map[string]int)
 }
 
 func New(ctx context.Context, db repository.Repository, opts ...Option) (*Analytics, error) {
