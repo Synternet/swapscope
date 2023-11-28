@@ -75,8 +75,9 @@ func (sw *Swap) Process(swap WrappedEventLog) error {
 	swapLog := swap.Log
 	addr0, addr1, found := sw.db.GetPoolPairAddresses(swapLog.Address)
 	if !found {
-		//return fmt.Errorf("(swap) token pair of pool %s not found in DB.", wel.Log.Address)
-		return nil
+		unknownAddressOccurrences[strings.ToLower(swapLog.Address)]++
+		unknownAddressTotalOccurences++
+		return fmt.Errorf("(swap) pool unknown? %s (%v/%v)", swapLog.Address, unknownAddressOccurrences[strings.ToLower(swapLog.Address)], unknownAddressTotalOccurences)
 	}
 	token0, found0 := sw.db.GetToken(addr0)
 	token1, found1 := sw.db.GetToken(addr1)
@@ -102,16 +103,16 @@ func (sw *Swap) Process(swap WrappedEventLog) error {
 		},
 	}
 	sw.Position = *swapPosition
-	sw.Position.adjustOrder()
+	sw.adjustOrder()
 
 	if sw.Token0.Amount < 0 && sw.Token1.Amount > 0 {
-		sw.From, sw.To = sw.Token0, sw.Token1
-	} else if sw.Token1.Amount < 0 && sw.Token0.Amount > 0 {
 		sw.From, sw.To = sw.Token1, sw.Token0
+	} else if sw.Token1.Amount < 0 && sw.Token0.Amount > 0 {
+		sw.From, sw.To = sw.Token0, sw.Token1
 	} else {
 		return fmt.Errorf("both token amounts are below 0 in swap. TX: %s", sw.TxHash)
 	}
-	sw.From.Amount = sw.From.Amount * (-1)
+	sw.To.Amount = sw.To.Amount * (-1)
 
 	return nil
 }
@@ -120,13 +121,15 @@ func (sw Swap) String() string {
 	format := "Swapping %f of %s to %f of %s."
 	return fmt.Sprintf(format,
 		sw.From.Amount,
-		sw.To.Symbol,
-		sw.From.Amount,
+		sw.From.Symbol,
+		sw.To.Amount,
 		sw.To.Symbol)
 }
 
 func (sw Swap) CanPublish() bool {
-	log.Println("TODO: Check if swap can be published.")
+	if strings.EqualFold(sw.Token0.Address, "") || strings.EqualFold(sw.Token1.Address, "") {
+		return false
+	}
 	return true
 }
 
