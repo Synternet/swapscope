@@ -48,3 +48,13 @@ type Removal struct {
 	Token1PriceUsd    float64
 	TxHash            string
 }
+
+type Swap struct {
+	TimestampReceived time.Time
+	LPoolAddress      string
+	TokenFrom         string
+	TokenFromAmount   float64
+	TokenTo           string
+	TokenToAmount     float64
+	TxHash            string
+}

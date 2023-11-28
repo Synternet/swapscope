@@ -47,6 +47,17 @@ type Removal struct {
 	TxHash            string
 }
 
+type Swap struct {
+	TimestampAdded    time.Time `gorm:"autoCreateTime:true"`
+	TimestampReceived time.Time
+	LPoolAddress      string
+	TokenFrom         string
+	TokenFromAmount   float64
+	TokenTo           string
+	TokenToAmount     float64
+	TxHash            string
+}
+
 type Pool struct {
 	Timestamp_added time.Time `gorm:"autoCreateTime:true"`
 	Address         string    `gorm:"primaryKey"`

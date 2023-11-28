@@ -26,6 +26,7 @@ type OperationBase struct {
 
 type Database interface {
 	SaveRemoval(repository.Removal) error
+	SaveSwap(repository.Swap) error
 	SaveAddition(repository.Addition) error
 	GetPoolPairAddresses(string) (string, string, bool)
 	GetToken(string) (repository.Token, bool)
@@ -49,7 +50,7 @@ type Removal struct {
 	Position
 	OperationBase
 	Send analytics.Sender
-	//TODO: Fees earned and collected
+
 	Token0Earned TokenTransaction
 	Token1Earned TokenTransaction
 }
@@ -69,8 +70,18 @@ type Swap struct {
 }
 
 func (sw Swap) Save(ts time.Time) error {
-	return nil
+	swap := repository.Swap{
+		TimestampReceived: ts,
+		LPoolAddress:      sw.Address,
+		TokenFrom:         sw.From.Address,
+		TokenFromAmount:   sw.From.Amount,
+		TokenTo:           sw.To.Address,
+		TokenToAmount:     sw.To.Amount,
+		TxHash:            sw.TxHash,
+	}
+	return sw.db.SaveSwap(swap)
 }
+
 func (sw *Swap) Process(swap WrappedEventLog) error {
 	swapLog := swap.Log
 	addr0, addr1, found := sw.db.GetPoolPairAddresses(swapLog.Address)
