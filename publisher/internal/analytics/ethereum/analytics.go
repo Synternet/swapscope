@@ -17,6 +17,7 @@ var (
 	transferSig string
 	burnSig     string
 	collectSig  string
+	swapSig     string
 
 	//go:embed Uniswap_Liquidity_Pool_contract.json
 	uniswapLiqPoolsABIJson string
@@ -41,6 +42,8 @@ const (
 	burnEvent             = "Burn"
 	collectEventHeader    = "Collect(address,address,int24,int24,uint128,uint128)"
 	collectEvent          = "Collect"
+	swapEventHeader       = "Swap(address,address,int256,int256,uint160,uint128,int24)"
+	swapEvent             = "Swap"
 	addressWETH           = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" // https://etherscan.io/token/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
 	addressUSDT           = "0xdAC17F958D2ee523a2206206994597C13D831ec7" // https://etherscan.io/token/0xdac17f958d2ee523a2206206994597c13d831ec7
 	addressUSDC           = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" // https://etherscan.io/token/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
@@ -64,9 +67,11 @@ func init() {
 	transferSig = convertToEventSignature(transferEventHeader)
 	burnSig = convertToEventSignature(burnEventHeader)
 	collectSig = convertToEventSignature(collectEventHeader)
+	swapSig = convertToEventSignature(swapEventHeader)
 
 	stableCoins = []string{strings.ToLower(addressUSDT), strings.ToLower(addressUSDC)}
 	nativeCoins = []string{strings.ToLower(addressWETH)}
+
 }
 
 func New(ctx context.Context, db repository.Repository, opts ...Option) (*Analytics, error) {

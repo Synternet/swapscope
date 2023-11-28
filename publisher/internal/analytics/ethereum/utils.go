@@ -98,6 +98,14 @@ func (a *Analytics) newWrappedEventLog(eLog EventLog) WrappedEventLog {
 			Operation: &Removal{OperationBase: initOpBase},
 			PublishTo: "remove",
 		}
+	case eLog.isSwap():
+		wel.Instructions = EventInstruction{
+			Name:      swapEvent,
+			Header:    swapEventHeader,
+			Signature: swapSig,
+			Operation: &Swap{OperationBase: initOpBase},
+			PublishTo: "swap",
+		}
 	default:
 		wel.Instructions = EventInstruction{
 			Name: "OTHER",
