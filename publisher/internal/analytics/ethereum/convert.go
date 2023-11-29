@@ -83,18 +83,11 @@ func convertTransferAmount(amountHex string, decimals int) float64 {
 }
 
 func convertLogDataToHexAmounts(rawData string, eventName string) (string, string, error) {
-	var abiToUse abi.ABI
-	switch {
-	case eventName == collectEvent:
-		abiToUse = uniswapLiqPositionsABI
-	default:
-		abiToUse = uniswapLiqPoolsABI
-	}
 	hexString := strings.TrimPrefix(rawData, "0x")
 	data, err := hex.DecodeString(hexString)
 
 	var args = make(map[string]interface{})
-	err = abiToUse.UnpackIntoMap(args, eventName, []byte(data))
+	err = uniswapLiqPoolsABI.UnpackIntoMap(args, eventName, []byte(data))
 	if err != nil {
 		return "", "", err
 	}
