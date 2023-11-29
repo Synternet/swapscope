@@ -126,9 +126,9 @@ func (r *Repository) SaveSwap(sw repository.Swap) error {
 	remove := Swap{
 		TimestampReceived: sw.TimestampReceived,
 		LPoolAddress:      sw.LPoolAddress,
-		TokenFrom:         sw.TokenFrom,
+		TokenAddressFrom:  sw.TokenAddressFrom,
 		TokenFromAmount:   sw.TokenFromAmount,
-		TokenTo:           sw.TokenTo,
+		TokenAddressTo:    sw.TokenAddressTo,
 		TokenToAmount:     sw.TokenToAmount,
 		TxHash:            sw.TxHash,
 	}
