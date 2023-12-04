@@ -28,4 +28,5 @@ docker run -p 3000:80 -td swapscope                     - run container (http://
 NEXT_PUBLIC_NATS_URL        - url to nats (default is set to devnet)
 NEXT_PUBLIC_ACCESS_TOKEN    - access token for your project (retrieve it from developer portal)
 NEXT_PUBLIC_ENV             - dapp environment (local/prod)
+NEXT_PUBLIC_SUBJECT_NAME    - subject to subscribe (stream in developer portal)
 ```
