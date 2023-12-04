@@ -61,7 +61,7 @@ export function filterItems(
       return false;
     }
 
-    if (operationType !== 'all' && item.operationType !== operationType){
+    if (operationType !== 'all' && item.operationType !== operationType) {
       return false;
     }
 
@@ -70,7 +70,7 @@ export function filterItems(
       return false;
     }
 
-    if (!itemIsInDateRange(item, dateRange)) {
+    if (!isItemInDateRange(item, dateRange)) {
       return false;
     }
 
@@ -78,7 +78,7 @@ export function filterItems(
   });
 }
 
-export function itemIsInDateRange(item: LiquidityPoolItem, dateRange: [string, string]) {
+export function isItemInDateRange(item: LiquidityPoolItem, dateRange: [string, string]) {
   return isWithinInterval(new Date(item.timestamp), { start: new Date(dateRange[0]), end: new Date(dateRange[1]) });
 }
 

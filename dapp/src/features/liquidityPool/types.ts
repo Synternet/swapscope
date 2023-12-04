@@ -14,6 +14,8 @@ export interface LiquidityPoolItemMessage {
   valueAddedUSD: number;
   pair: [LiquidityPoolItemToken, LiquidityPoolItemToken];
   txHash: string;
+  totalValueUSD: number;
+  operationType: 'add' | 'remove';
 }
 
 export interface LiquidityPoolItem extends LiquidityPoolItemMessage {

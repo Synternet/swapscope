@@ -8,7 +8,7 @@ export async function loadMockedMessages(onMessages: (messages: Message[]) => vo
     return {
       id: idx.toString(),
       data: JSON.stringify(x),
-      subject: `${getSubjectName()}.${idx % 2 === 0 ? 'remove' : 'add'}.${x.pair[0].symbol}.${x.pair[1].symbol}`,
+      subject: `${getSubjectName()}.${x.operationType}.${x.pair[0].symbol}.${x.pair[1].symbol}`,
       timestamp: 'mockedTimestamp',
     };
   });
@@ -17,5 +17,5 @@ export async function loadMockedMessages(onMessages: (messages: Message[]) => vo
 }
 
 export function getMockedDateNow() {
-  return new Date('2023-10-11T00:00:00.000Z').getTime();
+  return new Date('2023-12-05T00:00:00.000Z').getTime();
 }
