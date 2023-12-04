@@ -1,25 +1,25 @@
 describe('Liquidity Pool', () => {
   it('shows default chart and liquidity pool item list', () => {
     cy.visit('/');
-    waitForItemsLoaded(18, 35);
+    waitForItemsLoaded(7, 14);
     cy.matchImageSnapshot('liquidity-pool');
   });
 
   it('filters by date', () => {
     cy.visit('/');
     cy.getByTestId('DateFilter').within(() => cy.get('button').eq(1).click().blur());
-    waitForItemsLoaded(22, 42);
+    waitForItemsLoaded(15, 30);
     cy.matchImageSnapshot('liquidity-pool-filter-date-24h');
 
     cy.getByTestId('DateFilter').within(() => cy.get('button').eq(2).click().blur());
-    waitForItemsLoaded(23, 44);
+    waitForItemsLoaded(15, 30);
     cy.matchImageSnapshot('liquidity-pool-filter-date-48h');
   });
 
   it('filters by liquidity value', () => {
     cy.visit('/');
     cy.getByTestId('LiquidityValueFilter').within(() => cy.get('[data-index="1"]').first().click());
-    waitForItemsLoaded(12, 24);
+    waitForItemsLoaded(4, 8);
     cy.matchImageSnapshot('liquidity-pool-filter-size');
   });
 
@@ -27,27 +27,28 @@ describe('Liquidity Pool', () => {
     cy.visit('/');
     cy.getByTestId('TokenPairFilter').within(() => cy.get('button').should('have.length', 5));
     cy.getByTestId('TokenPairFilter').within(() => cy.get('button').eq(1).click().blur());
-    waitForItemsLoaded(3, 6);
+    waitForItemsLoaded(1, 2);
     cy.matchImageSnapshot('liquidity-pool-filter-token-pair-link-weth');
   });
 
-  it.only('filters by operation type', () => {
+  it('filters by operation type', () => {
     cy.visit('/');
     cy.getByTestId('OperationTypeFilter').click();
     cy.getByTestId('OperationTypeFilter-add').click();
-    waitForItemsLoaded(7, 14);
+    waitForItemsLoaded(3, 6);
     cy.matchImageSnapshot('liquidity-pool-filter-operation-type-add');
 
     cy.getByTestId('OperationTypeFilter').click();
     cy.getByTestId('OperationTypeFilter-remove').click();
-    waitForItemsLoaded(11, 21);
+    waitForItemsLoaded(4, 8);
     cy.matchImageSnapshot('liquidity-pool-filter-operation-type-remove');
   });
   
 
-  it('zooms in chart', () => {
+  it.only('zooms in chart', () => {
     cy.visit('/');
-    waitForItemsLoaded(18, 35);
+    cy.getByTestId('DateFilter').within(() => cy.get('button').eq(1).click().blur());
+    waitForItemsLoaded(15, 30);
     cy.getByTestId('LiquidityPoolChart').within(() => cy.get('.modebar a[data-title="Zoom in"]').click());
     cy.matchImageSnapshot('liquidity-pool-zoom-in');
   });

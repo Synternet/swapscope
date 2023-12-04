@@ -1,7 +1,15 @@
-import { formatPoolLimit, formatUsd, isMax, isMin, truncateNumber } from '@src/utils';
+import {
+  DEFAULT_TOKEN_DECIMAL_PLACES,
+  formatPoolLimit,
+  formatUsd,
+  getTokenValueDecimalPlaces,
+  isMax,
+  isMin,
+  truncateNumber,
+} from '@src/utils';
 import { differenceInMilliseconds } from 'date-fns';
 import { Data, PlotData } from 'plotly.js';
-import { getPoolItemTotalUsd, itemIsInDateRange, matchTokenPair } from '../../LiquidityPool.utils';
+import { getPoolItemTotalUsd, isItemInDateRange, matchTokenPair } from '../../LiquidityPool.utils';
 import { LiquidityPoolItem, TokenPair } from '../../types';
 
 const barWidthPx = 5;
@@ -96,15 +104,18 @@ function generateBars({ items, priceRange, customWidth }: GenerateBarsOptions): 
     type: 'bar',
     width: customWidth,
     hovertemplate: hoverTemplate(items[0]?.pair[0].symbol, items[0]?.pair[1].symbol),
-    customdata: items.map((x) => [
-      formatPoolLimit(x.lowerTokenRatio),
-      formatPoolLimit(x.upperTokenRatio),
-      truncateNumber(x.pair[0].amount),
-      truncateNumber(x.pair[1].amount),
-      formatUsd(getPoolItemTotalUsd(x)),
-      truncateNumber(getTokenPrice(x.pair[1].priceUSD, x.pair[0].priceUSD)),
-      x.operationType === 'add' ? "Liquidity add" : 'Liquidity remove',
-    ]),
+    customdata: items.map((x) => {
+      const tokenPrice = getTokenPrice(x.pair[1].priceUSD, x.pair[0].priceUSD);
+      return [
+        formatPoolLimit(x.lowerTokenRatio),
+        formatPoolLimit(x.upperTokenRatio),
+        truncateNumber(x.pair[0].amount),
+        truncateNumber(x.pair[1].amount),
+        formatUsd(getPoolItemTotalUsd(x)),
+        truncateNumber(tokenPrice, getTokenValueDecimalPlaces(tokenPrice)),
+        x.operationType === 'add' ? 'Liquidity add' : 'Liquidity remove',
+      ];
+    }),
     marker: getBarMarker(items),
   };
 }
@@ -129,7 +140,7 @@ function getPricePoints(options: GetPricePointsOptions): PricePoint[] {
   const tokenPairItems = data.filter((x) => matchTokenPair(x, tokenPair));
 
   const uniqueFilteredPrices = tokenPairItems.filter((item, idx) => {
-    if (!itemIsInDateRange(item, dateRange)) {
+    if (!isItemInDateRange(item, dateRange)) {
       return false;
     }
 
@@ -143,7 +154,7 @@ function getPricePoints(options: GetPricePointsOptions): PricePoint[] {
 
   const mapped: PricePoint[] = uniqueFilteredPrices.map((x) => ({
     timestamp: x.timestamp,
-    price: truncateNumber(getTokenPrice(x.pair[1].priceUSD, x.pair[0].priceUSD)),
+    price: truncateNumber(getTokenPrice(x.pair[1].priceUSD, x.pair[0].priceUSD), DEFAULT_TOKEN_DECIMAL_PLACES),
   }));
 
   const firstPoint: PricePoint = { timestamp: dateRange[0], price: mapped[0].price };
@@ -210,7 +221,7 @@ function getLiquidityPoolPosition(item: LiquidityPoolItem): LiquidityPoolItemPos
 }
 
 function getTokenPrice(token1Usd: number, token2Usd: number) {
-  return token1Usd / token2Usd;
+  return token2Usd / token1Usd;
 }
 
 export function getChartWidth(chartElement?: HTMLDivElement): number | undefined {

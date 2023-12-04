@@ -1,6 +1,8 @@
 import { format, parseISO } from 'date-fns';
 import { isMax, isMin } from './numbers';
 
+export const DEFAULT_TOKEN_DECIMAL_PLACES = 21;
+
 export function truncateAddress(address: string, length = 6) {
   return address.slice(0, length) + '..' + address.slice(address.length - length, address.length);
 }
@@ -23,7 +25,11 @@ export function formatPoolLimit(num: number) {
     return 'MAX';
   }
 
-  return truncateNumber(num);
+  return truncateNumber(num, getTokenValueDecimalPlaces(num));
+}
+
+export function getTokenValueDecimalPlaces(num: number) {
+  return num > 1 ? 2 : DEFAULT_TOKEN_DECIMAL_PLACES;
 }
 
 export function formatUsd(value: number) {

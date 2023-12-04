@@ -13,7 +13,7 @@ interface LiquidityPoolState {
   revision: string;
 }
 
-export const defaultTokenPair: TokenPair = { symbol1: 'USDC', symbol2: 'WETH' };
+export const defaultTokenPair: TokenPair = { symbol1: 'WETH', symbol2: 'USDC' };
 
 const initialState = (): LiquidityPoolState => ({
   items: [],
