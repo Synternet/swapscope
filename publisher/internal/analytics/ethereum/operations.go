@@ -146,7 +146,7 @@ func (sw Swap) Publish(send analytics.Sender, publishTo string, timestamp time.T
 		return fmt.Errorf("error marshalling Liquidity Removal object into a json message: %s", err)
 	}
 
-	streamName := strings.ToLower(fmt.Sprintf("%s.%s.%s", publishTo, sw.Token0.Symbol, sw.Token1.Symbol))
+	streamName := strings.ToLower(fmt.Sprintf("%s.%s", publishTo, sw.Address))
 	return send(removalJson, streamName)
 }
 
@@ -343,7 +343,7 @@ func (rem Removal) Publish(send analytics.Sender, publishTo string, timestamp ti
 		return fmt.Errorf("error marshalling Liquidity Removal object into a json message: %s", err)
 	}
 
-	streamName := strings.ToLower(fmt.Sprintf("%s.%s.%s", publishTo, rem.Token0.Symbol, rem.Token1.Symbol))
+	streamName := strings.ToLower(fmt.Sprintf("%s.%s", publishTo, rem.Address))
 	return send(removalJson, streamName)
 }
 
@@ -367,7 +367,7 @@ func (add Addition) Publish(send analytics.Sender, publishTo string, timestamp t
 		return fmt.Errorf("error marshalling Liquidity Addition object into a json message: %s", err)
 	}
 
-	streamName := strings.ToLower(fmt.Sprintf("%s.%s.%s", publishTo, add.Token0.Symbol, add.Token1.Symbol))
+	streamName := strings.ToLower(fmt.Sprintf("%s.%s", publishTo, add.Address))
 	return send(additionJson, streamName)
 }
 
