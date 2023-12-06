@@ -17,7 +17,8 @@ COPY ./src ./src
 COPY ./public ./public
 COPY .eslintrc.json .gitignore .ts-prunerc.json .env \
     next.config.js package-lock.json package.json tsconfig.json ./
-RUN npm i --omit=optional --legacy-peer-deps
+RUN npm cache clean --force
+RUN npm ci --omit=optional --legacy-peer-deps
 RUN npm run check:ci
 RUN npm run build
 RUN npm run export
