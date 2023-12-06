@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - '*' 
-    branches:
-      - 'fix-npm-ci-failure'
 
 env:
   REGISTRY: ghcr.io
