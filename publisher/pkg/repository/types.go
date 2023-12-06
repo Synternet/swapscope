@@ -52,9 +52,9 @@ type Removal struct {
 type Swap struct {
 	TimestampReceived time.Time
 	LPoolAddress      string
-	TokenAddressFrom  string
+	TokenFromAddress  string
 	TokenFromAmount   float64
-	TokenAddressTo    string
+	TokenToAddress    string
 	TokenToAmount     float64
 	TxHash            string
 }

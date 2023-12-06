@@ -1,7 +1,6 @@
 package ethereum
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -73,9 +72,9 @@ func (sw Swap) Save(ts time.Time) error {
 	swap := repository.Swap{
 		TimestampReceived: ts,
 		LPoolAddress:      sw.Address,
-		TokenAddressFrom:  sw.From.Address,
+		TokenFromAddress:  sw.From.Address,
 		TokenFromAmount:   sw.From.Amount,
-		TokenAddressTo:    sw.To.Address,
+		TokenToAddress:    sw.To.Address,
 		TokenToAmount:     sw.To.Amount,
 		TxHash:            sw.TxHash,
 	}
@@ -94,10 +93,9 @@ func (sw *Swap) Process(swap WrappedEventLog) error {
 		return err
 	}
 
-	swapPosition := newPosition(swapLog)
-	swapPosition.Token0 = TokenTransaction{Token: token0, Amount: convertTransferAmount(hexAmount0, token0.Decimals)}
-	swapPosition.Token1 = TokenTransaction{Token: token1, Amount: convertTransferAmount(hexAmount1, token1.Decimals)}
-	sw.Position = *swapPosition
+	sw.Position = newPosition(swap)
+	sw.Token0 = TokenTransaction{Token: token0, Amount: convertTransferAmount(hexAmount0, token0.Decimals)}
+	sw.Token1 = TokenTransaction{Token: token1, Amount: convertTransferAmount(hexAmount1, token1.Decimals)}
 
 	sw.adjustOrder()
 
@@ -141,13 +139,7 @@ func (sw Swap) Publish(send analytics.Sender, publishTo string, timestamp time.T
 		To:        types.TokenMessage{Address: sw.To.Address, Symbol: sw.To.Symbol, Amount: sw.To.Amount},
 	}
 
-	removalJson, err := json.Marshal(&swapMessage)
-	if err != nil {
-		return fmt.Errorf("error marshalling Liquidity Removal object into a json message: %s", err)
-	}
-
-	streamName := strings.ToLower(fmt.Sprintf("%s.%s", publishTo, sw.Address))
-	return send(removalJson, streamName)
+	return send(swapMessage, publishTo, sw.Address)
 }
 
 func (rem Removal) Save(ts time.Time) error {
@@ -204,6 +196,7 @@ func (rem Removal) getCorespondingRemoval(primaryLog WrappedEventLog) (EventLog,
 
 func (rem *Removal) Process(collect WrappedEventLog) error {
 	liqPool := collect.Log.Address
+	collectLog := collect.Log
 
 	burnLog, err := rem.getCorespondingRemoval(collect)
 	if err != nil {
@@ -220,19 +213,16 @@ func (rem *Removal) Process(collect WrappedEventLog) error {
 		return err
 	}
 
-	remPosition := newPosition(collect.Log)
-	remPosition.LowerTick = int(convertHexToBigInt(burnLog.Topics[2]).Int64())
-	remPosition.UpperTick = int(convertHexToBigInt(burnLog.Topics[3]).Int64())
-	remPosition.Token0 = TokenTransaction{Token: token0, Amount: convertTransferAmount(token0HexAmount, token0.Decimals)}
-	remPosition.Token1 = TokenTransaction{Token: token1, Amount: convertTransferAmount(token1HexAmount, token1.Decimals)}
-	rem.Position = *remPosition
+	rem.Position = newPosition(collect)
+	rem.Token0 = TokenTransaction{Token: token0, Amount: convertTransferAmount(token0HexAmount, token0.Decimals)}
+	rem.Token1 = TokenTransaction{Token: token1, Amount: convertTransferAmount(token1HexAmount, token1.Decimals)}
 
 	rem.Token0.Price = rem.fetchTokenPrice(rem.Token0.Address)
 	rem.Token1.Price = rem.fetchTokenPrice(rem.Token1.Address)
 
 	rem.Position.calculate()
 
-	err = rem.calculateFeesEarned(collect.Log, token0.Address, token1.Address)
+	err = rem.calculateFeesEarned(collectLog, token0.Address, token1.Address)
 	if err != nil {
 		return err
 	}
@@ -245,10 +235,7 @@ func (add *Addition) Process(mint WrappedEventLog) error {
 		return fmt.Errorf("not Uniswap Positions NFT.\n")
 	}
 
-	addPosition := newPosition(mintLog)
-	addPosition.LowerTick = int(convertHexToBigInt(mintLog.Topics[2]).Int64())
-	addPosition.UpperTick = int(convertHexToBigInt(mintLog.Topics[3]).Int64())
-	add.Position = *addPosition
+	add.Position = newPosition(mint)
 
 	transferLogs, err := add.cache.GetByTxHashAndLogType(mintLog.TransactionHash, transferEvent)
 	if err != nil {
@@ -338,13 +325,7 @@ func (rem Removal) Publish(send analytics.Sender, publishTo string, timestamp ti
 		TxHash: rem.TxHash,
 	}
 
-	removalJson, err := json.Marshal(&removalMessage)
-	if err != nil {
-		return fmt.Errorf("error marshalling Liquidity Removal object into a json message: %s", err)
-	}
-
-	streamName := strings.ToLower(fmt.Sprintf("%s.%s", publishTo, rem.Address))
-	return send(removalJson, streamName)
+	return send(removalMessage, publishTo, rem.Address)
 }
 
 func (add Addition) Publish(send analytics.Sender, publishTo string, timestamp time.Time) error {
@@ -362,13 +343,7 @@ func (add Addition) Publish(send analytics.Sender, publishTo string, timestamp t
 		TxHash: add.TxHash,
 	}
 
-	additionJson, err := json.Marshal(&additionMessage)
-	if err != nil {
-		return fmt.Errorf("error marshalling Liquidity Addition object into a json message: %s", err)
-	}
-
-	streamName := strings.ToLower(fmt.Sprintf("%s.%s", publishTo, add.Address))
-	return send(additionJson, streamName)
+	return send(additionMessage, publishTo, add.Address)
 }
 
 // handleLiquidityTransfer decodes Transfer event.
@@ -567,9 +542,18 @@ func (p Position) isAnyTokenOneOf(tokens []string) bool {
 	return p.isToken0OneOf(tokens) || p.isToken1OneOf(tokens)
 }
 
-func newPosition(log EventLog) *Position {
-	return &Position{
+func newPosition(wlog WrappedEventLog) Position {
+	log := wlog.Log
+
+	newPos := Position{
 		Address: log.Address,
 		TxHash:  log.TransactionHash,
 	}
+
+	if wlog.Instructions.Name == mintEvent || wlog.Instructions.Name == collectEvent {
+		newPos.LowerTick = int(convertHexToBigInt(log.Topics[2]).Int64())
+		newPos.UpperTick = int(convertHexToBigInt(log.Topics[3]).Int64())
+	}
+
+	return newPos
 }

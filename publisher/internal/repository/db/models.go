@@ -51,9 +51,9 @@ type Swap struct {
 	TimestampAdded    time.Time `gorm:"autoCreateTime:true"`
 	TimestampReceived time.Time
 	LPoolAddress      string
-	TokenAddressFrom  string
+	TokenFromAddress  string
 	TokenFromAmount   float64
-	TokenAddressTo    string
+	TokenToAddress    string
 	TokenToAmount     float64
 	TxHash            string
 }

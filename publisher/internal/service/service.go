@@ -2,9 +2,12 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/SyntropyNet/pubsub-go/pubsub"
@@ -41,10 +44,19 @@ func (s *Service) Done() context.Context {
 	return s.doneCtx
 }
 
-func (s *Service) publish(msg []byte, subj string) error {
-	subject := fmt.Sprintf("%s.%s", s.prefix, subj)
-	log.Printf("Publishing to: %s\n\n", subject)
-	return s.natsPub.Publish(s.ctx, subject, msg)
+func (s *Service) publish(msg any, subjects ...string) error {
+	fullStreamName := s.prefix
+	for _, sub := range subjects {
+		fullStreamName = strings.ToLower(fmt.Sprintf("%s.%s", fullStreamName, sub))
+	}
+
+	removalJson, err := json.Marshal(&msg)
+	if err != nil {
+		return fmt.Errorf("error marshalling %s into a json message: %s", reflect.TypeOf(msg), err)
+	}
+
+	log.Printf("Publishing to: %s\n\n", fullStreamName)
+	return s.natsPub.Publish(s.ctx, fullStreamName, removalJson)
 }
 
 func (s *Service) makeBufferedHandler(rungroup *errgroup.Group, name string, handler analytics.Handler) pubsub.HandlerWithSubject {
