@@ -1,8 +1,6 @@
 package ethereum
 
 import (
-	"strings"
-
 	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
 )
 
@@ -57,24 +55,4 @@ func (el *EventLog) hasTopics() bool {
 		}
 	}
 	return false
-}
-
-func (el *EventLog) isTransfer() bool {
-	return strings.HasPrefix(el.Topics[0], transferSig)
-}
-
-func (el *EventLog) isMint() bool {
-	return strings.HasPrefix(el.Topics[0], mintSig)
-}
-
-func (el *EventLog) isBurn() bool {
-	return strings.HasPrefix(el.Topics[0], burnSig)
-}
-
-func (el *EventLog) isCollect() bool {
-	return strings.HasPrefix(el.Topics[0], collectSig)
-}
-
-func (el *EventLog) isSwap() bool {
-	return strings.HasPrefix(el.Topics[0], swapSig)
 }

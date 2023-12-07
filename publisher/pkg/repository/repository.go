@@ -10,4 +10,5 @@ type Repository interface {
 	SavePool(pool Pool) error
 	SaveAddition(add Addition) error
 	SaveRemoval(rem Removal) error
+	SaveSwap(sw Swap) error
 }

@@ -8,7 +8,7 @@ type Message struct {
 	Data      []byte
 }
 
-type Sender func(data []byte, subject string) error
+type Sender func(data any, subjects ...string) error
 type Handler func(msg Message, sender Sender) error
 
 type Analytics interface {

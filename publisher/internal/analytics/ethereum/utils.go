@@ -2,6 +2,7 @@ package ethereum
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/patrickmn/go-cache"
 )
@@ -68,41 +69,41 @@ func (a *Analytics) newWrappedEventLog(eLog EventLog) WrappedEventLog {
 	}
 
 	switch {
-	case eLog.isTransfer():
+	case a.isTransfer(eLog):
 		wel.Instructions = EventInstruction{
 			Name:      transferEvent,
-			Header:    transferEventHeader,
-			Signature: transferSig,
+			Header:    ethereumErc20TokenABI.Events[transferEvent].Sig,
+			Signature: a.eventSignature[transferEvent],
 			Operation: nil,
 			PublishTo: "",
 		}
-	case eLog.isMint():
+	case a.isMint(eLog):
 		wel.Instructions = EventInstruction{
 			Name:      mintEvent,
-			Header:    mintEventHeader,
-			Signature: mintSig,
+			Header:    uniswapLiqPoolsABI.Events[mintEvent].Sig,
+			Signature: a.eventSignature[mintEvent],
 			Operation: &Addition{OperationBase: initOpBase},
 			PublishTo: "add",
 		}
-	case eLog.isBurn():
+	case a.isBurn(eLog):
 		wel.Instructions = EventInstruction{
 			Name:      burnEvent,
-			Header:    burnEventHeader,
-			Signature: burnSig,
+			Header:    uniswapLiqPoolsABI.Events[burnEvent].Sig,
+			Signature: a.eventSignature[burnEvent],
 		}
-	case eLog.isCollect():
+	case a.isCollect(eLog):
 		wel.Instructions = EventInstruction{
 			Name:      collectEvent,
-			Header:    collectEventHeader,
-			Signature: collectSig,
+			Header:    uniswapLiqPoolsABI.Events[collectEvent].Sig,
+			Signature: a.eventSignature[collectEvent],
 			Operation: &Removal{OperationBase: initOpBase},
 			PublishTo: "remove",
 		}
-	case eLog.isSwap():
+	case a.isSwap(eLog):
 		wel.Instructions = EventInstruction{
 			Name:      swapEvent,
-			Header:    swapEventHeader,
-			Signature: swapSig,
+			Header:    uniswapLiqPoolsABI.Events[swapEvent].Sig,
+			Signature: a.eventSignature[swapEvent],
 			Operation: &Swap{OperationBase: initOpBase},
 			PublishTo: "swap",
 		}
@@ -113,4 +114,24 @@ func (a *Analytics) newWrappedEventLog(eLog EventLog) WrappedEventLog {
 	}
 
 	return wel
+}
+
+func (a *Analytics) isTransfer(el EventLog) bool {
+	return strings.HasPrefix(el.Topics[0], a.eventSignature[transferEvent])
+}
+
+func (a *Analytics) isMint(el EventLog) bool {
+	return strings.HasPrefix(el.Topics[0], a.eventSignature[mintEvent])
+}
+
+func (a *Analytics) isBurn(el EventLog) bool {
+	return strings.HasPrefix(el.Topics[0], a.eventSignature[burnEvent])
+}
+
+func (a *Analytics) isCollect(el EventLog) bool {
+	return strings.HasPrefix(el.Topics[0], a.eventSignature[collectEvent])
+}
+
+func (a *Analytics) isSwap(el EventLog) bool {
+	return strings.HasPrefix(el.Topics[0], a.eventSignature[swapEvent])
 }

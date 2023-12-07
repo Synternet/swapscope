@@ -1,7 +1,6 @@
 package ethereum
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -26,6 +25,7 @@ type OperationBase struct {
 
 type Database interface {
 	SaveRemoval(repository.Removal) error
+	SaveSwap(repository.Swap) error
 	SaveAddition(repository.Addition) error
 	GetPoolPairAddresses(string) (string, string, bool)
 	GetToken(string) (repository.Token, bool)
@@ -49,7 +49,7 @@ type Removal struct {
 	Position
 	OperationBase
 	Send analytics.Sender
-	//TODO: Fees earned and collected
+
 	Token0Earned TokenTransaction
 	Token1Earned TokenTransaction
 }
@@ -69,18 +69,23 @@ type Swap struct {
 }
 
 func (sw Swap) Save(ts time.Time) error {
-	return nil
+	swap := repository.Swap{
+		TimestampReceived: ts,
+		LPoolAddress:      sw.Address,
+		TokenFromAddress:  sw.From.Address,
+		TokenFromAmount:   sw.From.Amount,
+		TokenToAddress:    sw.To.Address,
+		TokenToAmount:     sw.To.Amount,
+		TxHash:            sw.TxHash,
+	}
+	return sw.db.SaveSwap(swap)
 }
+
 func (sw *Swap) Process(swap WrappedEventLog) error {
 	swapLog := swap.Log
-	addr0, addr1, found := sw.db.GetPoolPairAddresses(swapLog.Address)
-	if !found {
-		return fmt.Errorf("(swap) pool unknown? %s", swapLog.Address)
-	}
-	token0, found0 := sw.db.GetToken(addr0)
-	token1, found1 := sw.db.GetToken(addr1)
-	if !found0 || !found1 {
-		return fmt.Errorf("SKIP (swap) - at least one token is unknown. Pool address: %s", swapLog.Address)
+	token0, token1, err := sw.getTokensByPoolAddress(swapLog.Address)
+	if err != nil {
+		return err
 	}
 
 	hexAmount0, hexAmount1, err := convertLogDataToHexAmounts(swapLog.Data, swap.Instructions.Name)
@@ -88,19 +93,10 @@ func (sw *Swap) Process(swap WrappedEventLog) error {
 		return err
 	}
 
-	swapPosition := &Position{
-		Address: swapLog.Address,
-		TxHash:  swapLog.TransactionHash,
-		Token0: TokenTransaction{
-			Token:  token0,
-			Amount: convertTransferAmount(hexAmount0, token0.Decimals),
-		},
-		Token1: TokenTransaction{
-			Token:  token1,
-			Amount: convertTransferAmount(hexAmount1, token1.Decimals),
-		},
-	}
-	sw.Position = *swapPosition
+	sw.Position = newPosition(swap)
+	sw.Token0 = TokenTransaction{Token: token0, Amount: convertTransferAmount(hexAmount0, token0.Decimals)}
+	sw.Token1 = TokenTransaction{Token: token1, Amount: convertTransferAmount(hexAmount1, token1.Decimals)}
+
 	sw.adjustOrder()
 
 	if sw.Token0.Amount < 0 && sw.Token1.Amount > 0 {
@@ -128,6 +124,9 @@ func (sw Swap) CanPublish() bool {
 	if strings.EqualFold(sw.Token0.Address, "") || strings.EqualFold(sw.Token1.Address, "") {
 		return false
 	}
+	if !sw.isAnyTokenOneOf(nativeCoins) && !sw.isAnyTokenOneOf(stableCoins) {
+		return false
+	}
 	return true
 }
 
@@ -136,17 +135,11 @@ func (sw Swap) Publish(send analytics.Sender, publishTo string, timestamp time.T
 		Timestamp: timestamp,
 		TxHash:    sw.TxHash,
 		Address:   sw.Address,
-		From:      types.TokenMessage{Symbol: sw.From.Symbol, Amount: sw.From.Amount},
-		To:        types.TokenMessage{Symbol: sw.To.Symbol, Amount: sw.To.Amount},
+		From:      types.TokenMessage{Address: sw.From.Address, Symbol: sw.From.Symbol, Amount: sw.From.Amount},
+		To:        types.TokenMessage{Address: sw.To.Address, Symbol: sw.To.Symbol, Amount: sw.To.Amount},
 	}
 
-	removalJson, err := json.Marshal(&swapMessage)
-	if err != nil {
-		return fmt.Errorf("error marshalling Liquidity Removal object into a json message: %s", err)
-	}
-
-	streamName := strings.ToLower(fmt.Sprintf("%s.%s.%s", publishTo, sw.Token0.Symbol, sw.Token1.Symbol))
-	return send(removalJson, streamName)
+	return send(swapMessage, publishTo, sw.Address)
 }
 
 func (rem Removal) Save(ts time.Time) error {
@@ -203,20 +196,16 @@ func (rem Removal) getCorespondingRemoval(primaryLog WrappedEventLog) (EventLog,
 
 func (rem *Removal) Process(collect WrappedEventLog) error {
 	liqPool := collect.Log.Address
+	collectLog := collect.Log
 
 	burnLog, err := rem.getCorespondingRemoval(collect)
 	if err != nil {
 		return err
 	}
 
-	addr0, addr1, found := rem.db.GetPoolPairAddresses(liqPool)
-	if !found {
-		return fmt.Errorf("SKIP - liq. pool is unknown (removal). pool address: %s", liqPool)
-	}
-	token0, found0 := rem.db.GetToken(addr0)
-	token1, found1 := rem.db.GetToken(addr1)
-	if !found0 || !found1 {
-		return fmt.Errorf("SKIP - at least one token is unknown in liquidity removal. pool address: %s", liqPool)
+	token0, token1, err := rem.getTokensByPoolAddress(liqPool)
+	if err != nil {
+		return err
 	}
 
 	token0HexAmount, token1HexAmount, err := convertLogDataToHexAmounts(burnLog.Data, burnEvent)
@@ -224,28 +213,16 @@ func (rem *Removal) Process(collect WrappedEventLog) error {
 		return err
 	}
 
-	//TODO: Create a 'position initialization' function
-	remPosition := &Position{
-		Address:   burnLog.Address,
-		TxHash:    burnLog.TransactionHash,
-		LowerTick: int(convertHexToBigInt(burnLog.Topics[2]).Int64()),
-		UpperTick: int(convertHexToBigInt(burnLog.Topics[3]).Int64()),
-		Token0: TokenTransaction{
-			Token:  token0,
-			Amount: convertTransferAmount(token0HexAmount, token0.Decimals),
-		},
-		Token1: TokenTransaction{
-			Token:  token1,
-			Amount: convertTransferAmount(token1HexAmount, token1.Decimals),
-		},
-	}
-	rem.Position = *remPosition
+	rem.Position = newPosition(collect)
+	rem.Token0 = TokenTransaction{Token: token0, Amount: convertTransferAmount(token0HexAmount, token0.Decimals)}
+	rem.Token1 = TokenTransaction{Token: token1, Amount: convertTransferAmount(token1HexAmount, token1.Decimals)}
+
 	rem.Token0.Price = rem.fetchTokenPrice(rem.Token0.Address)
 	rem.Token1.Price = rem.fetchTokenPrice(rem.Token1.Address)
 
 	rem.Position.calculate()
 
-	err = rem.calculateFeesEarned(collect.Log, addr0, addr1)
+	err = rem.calculateFeesEarned(collectLog, token0.Address, token1.Address)
 	if err != nil {
 		return err
 	}
@@ -257,14 +234,8 @@ func (add *Addition) Process(mint WrappedEventLog) error {
 	if !isUniswapPositionsNFT(mintLog.Data) {
 		return fmt.Errorf("not Uniswap Positions NFT.\n")
 	}
-	//TODO: Create a 'position initialization' function
-	addPosition := &Position{
-		Address:   mintLog.Address,
-		TxHash:    mintLog.TransactionHash,
-		LowerTick: int(convertHexToBigInt(mintLog.Topics[2]).Int64()),
-		UpperTick: int(convertHexToBigInt(mintLog.Topics[3]).Int64()),
-	}
-	add.Position = *addPosition
+
+	add.Position = newPosition(mint)
 
 	transferLogs, err := add.cache.GetByTxHashAndLogType(mintLog.TransactionHash, transferEvent)
 	if err != nil {
@@ -342,25 +313,19 @@ func (rem Removal) Publish(send analytics.Sender, publishTo string, timestamp ti
 		CurrentTokenRatio: rem.CurrentRatio,
 		UpperTokenRatio:   rem.UpperRatio,
 		ValueRemovedUSD:   rem.TotalValue,
+		ValueEarnedUSD:    rem.Token0.Price*rem.Token0Earned.Amount + rem.Token1.Price*rem.Token1Earned.Amount,
 		Pair: [2]types.TokenMessage{
-			{Symbol: rem.Token0.Symbol, Amount: rem.Token0.Amount, Price: rem.Token0.Price},
-			{Symbol: rem.Token1.Symbol, Amount: rem.Token1.Amount, Price: rem.Token1.Price},
+			{Address: rem.Token0.Address, Symbol: rem.Token0.Symbol, Amount: rem.Token0.Amount, Price: rem.Token0.Price},
+			{Address: rem.Token1.Address, Symbol: rem.Token1.Symbol, Amount: rem.Token1.Amount, Price: rem.Token1.Price},
 		},
-		Earned: [2]types.TokensEarnedMessage{
-			{Symbol: rem.Token0.Symbol, Amount: rem.Token0Earned.Amount, TotalValueUSD: rem.Token0.Price * rem.Token0Earned.Amount},
-			{Symbol: rem.Token1.Symbol, Amount: rem.Token1Earned.Amount, TotalValueUSD: rem.Token1.Price * rem.Token1Earned.Amount},
+		Earned: [2]types.TokenMessage{
+			{Symbol: rem.Token0.Symbol, Amount: rem.Token0Earned.Amount},
+			{Symbol: rem.Token1.Symbol, Amount: rem.Token1Earned.Amount},
 		},
-		ValueEarnedUSD: rem.Token0.Price*rem.Token0Earned.Amount + rem.Token1.Price*rem.Token1Earned.Amount,
-		TxHash:         rem.TxHash,
+		TxHash: rem.TxHash,
 	}
 
-	removalJson, err := json.Marshal(&removalMessage)
-	if err != nil {
-		return fmt.Errorf("error marshalling Liquidity Removal object into a json message: %s", err)
-	}
-
-	streamName := strings.ToLower(fmt.Sprintf("%s.%s.%s", publishTo, rem.Token0.Symbol, rem.Token1.Symbol))
-	return send(removalJson, streamName)
+	return send(removalMessage, publishTo, rem.Address)
 }
 
 func (add Addition) Publish(send analytics.Sender, publishTo string, timestamp time.Time) error {
@@ -372,19 +337,13 @@ func (add Addition) Publish(send analytics.Sender, publishTo string, timestamp t
 		UpperTokenRatio:   add.UpperRatio,
 		ValueAddedUSD:     add.TotalValue,
 		Pair: [2]types.TokenMessage{
-			{Symbol: add.Token0.Symbol, Amount: add.Token0.Amount, Price: add.Token0.Price},
-			{Symbol: add.Token1.Symbol, Amount: add.Token1.Amount, Price: add.Token1.Price},
+			{Address: add.Token0.Address, Symbol: add.Token0.Symbol, Amount: add.Token0.Amount, Price: add.Token0.Price},
+			{Address: add.Token1.Address, Symbol: add.Token1.Symbol, Amount: add.Token1.Amount, Price: add.Token1.Price},
 		},
 		TxHash: add.TxHash,
 	}
 
-	additionJson, err := json.Marshal(&additionMessage)
-	if err != nil {
-		return fmt.Errorf("error marshalling Liquidity Addition object into a json message: %s", err)
-	}
-
-	streamName := strings.ToLower(fmt.Sprintf("%s.%s.%s", publishTo, add.Token0.Symbol, add.Token1.Symbol))
-	return send(additionJson, streamName)
+	return send(additionMessage, publishTo, add.Address)
 }
 
 // handleLiquidityTransfer decodes Transfer event.
@@ -435,6 +394,19 @@ func (rem *Removal) calculateFeesEarned(collectLog EventLog, poolOrderToken0 str
 
 // ----------------------------------------------------------------------
 // --------------- OperationBase methods
+
+func (ob OperationBase) getTokensByPoolAddress(liqPoolAddress string) (repository.Token, repository.Token, error) {
+	addr0, addr1, found := ob.db.GetPoolPairAddresses(liqPoolAddress)
+	if !found {
+		return repository.Token{}, repository.Token{}, fmt.Errorf("SKIP - liq. pool is unknown. Pool address: %s", liqPoolAddress)
+	}
+	token0, found0 := ob.db.GetToken(addr0)
+	token1, found1 := ob.db.GetToken(addr1)
+	if !found0 || !found1 {
+		return repository.Token{}, repository.Token{}, fmt.Errorf("SKIP - at least one token is unknown in liquidity removal. Pool address: %s", liqPoolAddress)
+	}
+	return token0, token1, nil
+}
 
 func (ob OperationBase) fetchTokenPrice(tokAddress string) float64 {
 	// Place here to implement price cache?
@@ -568,4 +540,20 @@ func (p Position) isToken0OneOf(tokens []string) bool {
 
 func (p Position) isAnyTokenOneOf(tokens []string) bool {
 	return p.isToken0OneOf(tokens) || p.isToken1OneOf(tokens)
+}
+
+func newPosition(wlog WrappedEventLog) Position {
+	log := wlog.Log
+
+	newPos := Position{
+		Address: log.Address,
+		TxHash:  log.TransactionHash,
+	}
+
+	if wlog.Instructions.Name == mintEvent || wlog.Instructions.Name == collectEvent {
+		newPos.LowerTick = int(convertHexToBigInt(log.Topics[2]).Int64())
+		newPos.UpperTick = int(convertHexToBigInt(log.Topics[3]).Int64())
+	}
+
+	return newPos
 }

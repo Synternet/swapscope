@@ -36,6 +36,7 @@ func New(host string, port string, user string, password string, dbname string) 
 	dbCon.Table("eth_liq_pools_local").AutoMigrate(&Pool{})
 	dbCon.Table("eth_liq_adds_local").AutoMigrate(&Addition{})
 	dbCon.Table("eth_liq_removals_local").AutoMigrate(&Removal{})
+	dbCon.Table("eth_swaps_local").AutoMigrate(&Swap{})
 	return ret, nil
 }
 
@@ -118,5 +119,19 @@ func (r *Repository) SaveRemoval(lpRem repository.Removal) error {
 		TxHash:            lpRem.TxHash,
 	}
 	result := r.dbCon.Table("eth_liq_removals_local").Create(&remove)
+	return result.Error
+}
+
+func (r *Repository) SaveSwap(sw repository.Swap) error {
+	remove := Swap{
+		TimestampReceived: sw.TimestampReceived,
+		LPoolAddress:      sw.LPoolAddress,
+		TokenFromAddress:  sw.TokenFromAddress,
+		TokenFromAmount:   sw.TokenFromAmount,
+		TokenToAddress:    sw.TokenToAddress,
+		TokenToAmount:     sw.TokenToAmount,
+		TxHash:            sw.TxHash,
+	}
+	result := r.dbCon.Table("eth_swaps_local").Create(&remove)
 	return result.Error
 }
