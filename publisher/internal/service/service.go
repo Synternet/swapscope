@@ -45,18 +45,16 @@ func (s *Service) Done() context.Context {
 }
 
 func (s *Service) publish(msg any, subjects ...string) error {
-	fullStreamName := s.prefix
-	for _, sub := range subjects {
-		fullStreamName = strings.ToLower(fmt.Sprintf("%s.%s", fullStreamName, sub))
-	}
+	streamSubject := strings.ToLower(strings.Join(subjects, "."))
+	fullStreamName := fmt.Sprintf("%s.%s", s.prefix, streamSubject)
 
-	removalJson, err := json.Marshal(&msg)
+	messageJson, err := json.Marshal(&msg)
 	if err != nil {
 		return fmt.Errorf("error marshalling %s into a json message: %s", reflect.TypeOf(msg), err)
 	}
 
 	log.Printf("Publishing to: %s\n\n", fullStreamName)
-	return s.natsPub.Publish(s.ctx, fullStreamName, removalJson)
+	return s.natsPub.Publish(s.ctx, fullStreamName, messageJson)
 }
 
 func (s *Service) makeBufferedHandler(rungroup *errgroup.Group, name string, handler analytics.Handler) pubsub.HandlerWithSubject {
