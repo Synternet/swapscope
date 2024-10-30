@@ -3,7 +3,7 @@ module github.com/Synternet/swapscope/publisher
 go 1.20
 
 require (
-	github.com/Synternet/pubsub-go/pubsub v0.0.0-20230815160620-eb3331e243f0
+	github.com/Synternet/pubsub-go/pubsub v0.0.0-20241029130459-2a012141ba88
 	github.com/ethereum/go-ethereum v1.13.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
