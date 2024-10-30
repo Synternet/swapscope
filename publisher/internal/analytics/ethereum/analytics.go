@@ -6,8 +6,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/SyntropyNet/swapscope/publisher/pkg/analytics"
-	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
+	"github.com/Synternet/swapscope/publisher/pkg/analytics"
+	"github.com/Synternet/swapscope/publisher/pkg/repository"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/patrickmn/go-cache"
 )
@@ -26,7 +26,7 @@ var (
 )
 
 const (
-	subSubject            = "syntropy.ethereum.log-event"
+	subSubject            = "synternet.ethereum.log-event"
 	uniswapPositionsOwner = "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
 	mintEvent             = "Mint" // Has to match Event's name in respective ABI
 	transferEvent         = "Transfer"
@@ -48,10 +48,12 @@ type Analytics struct {
 	eventSignature map[string]string
 }
 
-type CacheRecord map[string]interface{}
-type EventLogCache struct {
-	*cache.Cache
-}
+type (
+	CacheRecord   map[string]interface{}
+	EventLogCache struct {
+		*cache.Cache
+	}
+)
 
 func init() {
 	stableCoins = []string{strings.ToLower(addressUSDT), strings.ToLower(addressUSDC)}

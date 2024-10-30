@@ -1,7 +1,7 @@
 package ethereum
 
 import (
-	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
+	"github.com/Synternet/swapscope/publisher/pkg/repository"
 )
 
 type EventLog struct {

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/SyntropyNet/pubsub-go/pubsub"
-	"github.com/SyntropyNet/swapscope/publisher/pkg/analytics"
+	"github.com/Synternet/pubsub-go/pubsub"
+	"github.com/Synternet/swapscope/publisher/pkg/analytics"
 	"golang.org/x/sync/errgroup"
 )
 

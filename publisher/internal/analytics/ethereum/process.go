@@ -3,7 +3,7 @@ package ethereum
 import (
 	"log"
 
-	"github.com/SyntropyNet/swapscope/publisher/pkg/analytics"
+	"github.com/Synternet/swapscope/publisher/pkg/analytics"
 )
 
 func (a *Analytics) ProcessMessage(msg analytics.Message, send analytics.Sender) error {
@@ -26,7 +26,7 @@ func (a *Analytics) ProcessMessage(msg analytics.Message, send analytics.Sender)
 	if err != nil {
 		log.Println("Failed to extract event from logs: ", err.Error())
 		return nil
-		//return err //TODO: currently if error is returned - whole service (goroutine) is stopped - should not be like this?
+		// return err //TODO: currently if error is returned - whole service (goroutine) is stopped - should not be like this?
 	}
 
 	if !operation.CanPublish() {
@@ -36,6 +36,6 @@ func (a *Analytics) ProcessMessage(msg analytics.Message, send analytics.Sender)
 	log.Println("Tx hash:", wrappedLog.Log.TransactionHash)
 	log.Println("Operation processed:", operation.String())
 
-	//return operation.Save(msg.Timestamp) // Option to save additions and removals to DB
+	// return operation.Save(msg.Timestamp) // Option to save additions and removals to DB
 	return operation.Publish(send, wrappedLog.Instructions.PublishTo, msg.Timestamp)
 }

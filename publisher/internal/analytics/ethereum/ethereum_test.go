@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
+	"github.com/Synternet/swapscope/publisher/pkg/repository"
 )
 
 var knownTokens = map[string]TokenTransaction{

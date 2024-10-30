@@ -46,7 +46,7 @@ type ServiceConfig struct {
 }
 
 func setupDefaults() {
-	setEnvDefaults(PublisherPrefixName, "syntropy.analytics")
+	setEnvDefaults(PublisherPrefixName, "synternet.analytics")
 	setEnvDefaults(LogCacheExpirationTimeName, "2m")
 	setEnvDefaults(LogCachePurgeTimeName, "3m")
 	setEnvDefaults(PriceCacheExpirationTimeName, "2m")

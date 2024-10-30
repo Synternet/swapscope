@@ -1,10 +1,10 @@
 # SwapScope publisher
-![GitHub go.mod Go version (branch & subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/SyntropyNet/swapscope/main?filename=publisher%2Fgo.mod)
+![GitHub go.mod Go version (branch & subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/Synternet/swapscope/main?filename=publisher%2Fgo.mod)
 ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 
-SwapScope publisher consumes Syntropy Data Layer's Ethereum event log stream. Liquidity addition (mint) and removal (burn) events are detected, decoded and expanded with additional information about involved tokens. Token information (symbol, decimals, prices) are received through CoinGecko API.
- 
+SwapScope publisher consumes Synternet Data Layer's Ethereum event log stream. Liquidity addition (mint) and removal (burn) events are detected, decoded and expanded with additional information about involved tokens. Token information (symbol, decimals, prices) are received through CoinGecko API.
+
 ## Usage
 
 1. Compile code.
@@ -13,7 +13,7 @@ make build
 ```
 2. Set variables.
 
-* Using .env file. See [.example.env](https://github.com/SyntropyNet/swapscope/blob/main/publisher/.example.env) (works if running locally)
+* Using .env file. See [.example.env](https://github.com/Synternet/swapscope/blob/main/publisher/.example.env) (works if running locally)
 
 
 * OR Using flags or environment variables:
@@ -24,7 +24,7 @@ make build
 | nats-sub-creds       | NATS_SUB_CREDS_FILE     | (Y/N[^1]) NATS Subscriber Credentials File path (combined JWT and NKey file) | -                                |
 | nats-sub-jwt         | NATS_SUB_JWT            | (Y/N[^1]) NATS Subscriber Credentials JWT string                             | -                                |
 | nats-sub-nkey        | NATS_SUB_NKEY           | (Y/N[^1]) NATS Subscriber Credentials NKey string                            | -                                |
-| pub-subject-prefix   | SUBJECT_PREFIX          | (Y[^2]) Subject prefix                                                      | syntropy.analytics               |
+| pub-subject-prefix   | SUBJECT_PREFIX          | (Y[^2]) Subject prefix                                                      | synternet.analytics               |
 | nats-pub-creds       | NATS_PUB_CREDS_FILE     | (Y/N[^1]) NATS Publisher Credentials File path (combined JWT and NKey file)  | -                                |
 | nats-pub-jwt         | NATS_PUB_JWT            | (Y/N[^1]) NATS Publisher Credentials JWT string                              | -                                |
 | nats-pub-nkey        | NATS_PUB_NKEY           | (Y/N[^1]) NATS Publisher Credentials NKey string                             | -                                |

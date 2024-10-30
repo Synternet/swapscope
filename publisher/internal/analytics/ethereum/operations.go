@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/SyntropyNet/swapscope/publisher/pkg/analytics"
-	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
-	"github.com/SyntropyNet/swapscope/publisher/pkg/types"
+	"github.com/Synternet/swapscope/publisher/pkg/analytics"
+	"github.com/Synternet/swapscope/publisher/pkg/repository"
+	"github.com/Synternet/swapscope/publisher/pkg/types"
 	"golang.org/x/exp/slices"
 )
 
@@ -432,7 +432,6 @@ func (op OperationBase) lookupPrice(address string) (repository.TokenPrice, erro
 // --------------- Position methods
 
 func (pos *Position) calculateRatios() {
-
 	lowerRatio := convertTickToRatio(pos.LowerTick, pos.Token0.Decimals, pos.Token1.Decimals)
 	upperRatio := convertTickToRatio(pos.UpperTick, pos.Token0.Decimals, pos.Token1.Decimals)
 

@@ -7,11 +7,11 @@ import (
 	"os/signal"
 	"time"
 
-	svcnats "github.com/SyntropyNet/pubsub-go/pubsub"
-	"github.com/SyntropyNet/swapscope/publisher/internal/analytics/ethereum"
-	"github.com/SyntropyNet/swapscope/publisher/internal/fetcher"
-	"github.com/SyntropyNet/swapscope/publisher/internal/repository/db"
-	"github.com/SyntropyNet/swapscope/publisher/internal/service"
+	svcnats "github.com/Synternet/pubsub-go/pubsub"
+	"github.com/Synternet/swapscope/publisher/internal/analytics/ethereum"
+	"github.com/Synternet/swapscope/publisher/internal/fetcher"
+	"github.com/Synternet/swapscope/publisher/internal/repository/db"
+	"github.com/Synternet/swapscope/publisher/internal/service"
 	"github.com/nats-io/nats.go"
 )
 

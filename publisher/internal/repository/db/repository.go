@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
+	"github.com/Synternet/swapscope/publisher/pkg/repository"
 	_ "github.com/lib/pq"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -24,7 +24,6 @@ func New(host string, port string, user string, password string, dbname string) 
 		DSN:                  fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname),
 		PreferSimpleProtocol: true, // disables implicit prepared statement usage. By default pgx automatically uses the extended protocol
 	}), &gorm.Config{})
-
 	if err != nil {
 		return nil, err
 	}

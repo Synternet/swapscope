@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/SyntropyNet/swapscope/publisher/pkg/repository"
+	"github.com/Synternet/swapscope/publisher/pkg/repository"
 	"github.com/patrickmn/go-cache"
 )
 
@@ -42,10 +42,12 @@ type CoingeckoFetcher struct {
 	cache        *cache.Cache // For price fetching
 }
 
-const tokenInfoEndpoint = "/coins/ethereum/contract/"
-const tokenPriceEndpoint = "/simple/token_price/ethereum"
-const priceBase = "usd"
-const pricePrecision = 10
+const (
+	tokenInfoEndpoint  = "/coins/ethereum/contract/"
+	tokenPriceEndpoint = "/simple/token_price/ethereum"
+	priceBase          = "usd"
+	pricePrecision     = 10
+)
 
 func NewCoingeckoFetcher(ctx context.Context, db repository.Repository, apiUrl string, expires, purges, timeout time.Duration, rateLimit int) (*CoingeckoFetcher, error) {
 	ret := &CoingeckoFetcher{
@@ -91,7 +93,7 @@ func (p *CoingeckoFetcher) fetchPrice(tokenAddress string) (repository.TokenPric
 	apiURL = apiURL.JoinPath(tokenPriceEndpoint)
 	apiURL.RawQuery = queryParams.Encode()
 
-	//var result TokenPriceResponse
+	// var result TokenPriceResponse
 	res, err := p.priceFetcher.Fetch(p.ctx, apiURL.String())
 	if err != nil {
 		return repository.TokenPrice{}, fmt.Errorf("failed fetching price for %s: %w", tokenAddress, err)

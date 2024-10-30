@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 
-	svcnats "github.com/SyntropyNet/pubsub-go/pubsub"
-	"github.com/SyntropyNet/swapscope/publisher/pkg/analytics"
+	svcnats "github.com/Synternet/pubsub-go/pubsub"
+	"github.com/Synternet/swapscope/publisher/pkg/analytics"
 )
 
 type Option func(*Options) error
